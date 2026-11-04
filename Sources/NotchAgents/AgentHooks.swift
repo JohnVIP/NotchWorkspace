@@ -54,7 +54,7 @@ public enum AgentHooksError: LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .unreadable(let path): "\(path) isn't a JSON object ILoveNotch can read, so it wasn't changed."
+        case .unreadable(let path): "\(path) isn't a JSON object Notch Workspace can read, so it wasn't changed."
         }
     }
 }
@@ -65,14 +65,14 @@ public enum AgentHooksError: LocalizedError, Equatable {
 /// `AgentsFeature` watches.
 public struct AgentHooks: Sendable {
     let home: URL
-    /// The hook script, named so ILoveNotch can always tell its hooks from anyone else's.
+    /// The hook script, named so Notch Workspace can always tell its hooks from anyone else's.
     let script: URL
     /// Where the script writes each session's state.
     let states: URL
-    /// A copy of each settings file from just before ILoveNotch last changed it.
+    /// A copy of each settings file from just before Notch Workspace last changed it.
     let backups: URL
 
-    static let scriptName = "ilovenotch-agent-hook"
+    static let scriptName = "notchworkspace-agent-hook"
 
     public init() {
         self.init(
@@ -99,18 +99,18 @@ public struct AgentHooks: Sendable {
         guard let data = try? Data(contentsOf: configFile(tool)),
             let settings = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         else { return false }
-        return Self.hasOurs(settings)
+        return hasOurs(settings, tool: tool)
     }
 
     public func install(_ tool: AgentTool) throws {
         try FileManager.default.createDirectory(at: states, withIntermediateDirectories: true)
         try writeScript()
-        try edit(tool) { Self.adding(tool, command: command, to: $0) }
+        try edit(tool) { adding(tool, to: $0) }
     }
 
     /// Takes the tool's hooks out. With no tool left, the script and its session files go too.
     public func uninstall(_ tool: AgentTool) throws {
-        try edit(tool) { Self.removing(from: $0) }
+        try edit(tool) { removing(from: $0, tool: tool) }
         guard !AgentTool.allCases.contains(where: isInstalled) else { return }
         try? FileManager.default.removeItem(at: states)
         try? FileManager.default.removeItem(at: script)
@@ -127,8 +127,10 @@ public struct AgentHooks: Sendable {
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
     }
 
-    /// Single quotes keep the space in "Application Support" from splitting the command.
-    private var command: String { "'\(script.path)'" }
+    private func command(for tool: AgentTool, state: String) -> String {
+        let path = script.path.replacingOccurrences(of: "'", with: "'\\''")
+        return "'\(path)' \(tool.rawValue) \(state)"
+    }
 
     // MARK: Settings files
 
@@ -151,7 +153,7 @@ public struct AgentHooks: Sendable {
         }
         let changed = change(settings)
         guard !NSDictionary(dictionary: changed).isEqual(to: settings) else { return }
-        // Codex's hooks.json holds only hooks: one ILoveNotch emptied goes, rather than stay empty.
+        // Codex's hooks.json holds only hooks: one Notch Workspace emptied goes, rather than stay empty.
         if tool == .codex, changed.isEmpty {
             try? fileManager.removeItem(at: file)
             return
@@ -163,27 +165,30 @@ public struct AgentHooks: Sendable {
         if let permissions { try? fileManager.setAttributes([.posixPermissions: permissions], ofItemAtPath: file.path) }
     }
 
-    static func isOurs(_ handler: Any) -> Bool {
-        ((handler as? [String: Any])?["command"] as? String)?.contains(scriptName) == true
+    private func owns(_ handler: Any, tool: AgentTool) -> Bool {
+        guard let hook = handler as? [String: Any], hook["type"] as? String == "command",
+            let command = hook["command"] as? String
+        else { return false }
+        return tool.events.contains { self.command(for: tool, state: $0.state) == command }
     }
 
-    static func hasOurs(_ settings: [String: Any]) -> Bool {
+    private func hasOurs(_ settings: [String: Any], tool: AgentTool) -> Bool {
         let events = settings["hooks"] as? [String: Any] ?? [:]
         return events.values.contains { groups in
             (groups as? [Any] ?? []).contains {
-                (($0 as? [String: Any])?["hooks"] as? [Any] ?? []).contains(where: isOurs)
+                (($0 as? [String: Any])?["hooks"] as? [Any] ?? []).contains { owns($0, tool: tool) }
             }
         }
     }
 
     /// `settings` with the notch's hooks for `tool` after everyone else's, one group per event. It
     /// runs in the background (`async`), so an agent never waits on it.
-    static func adding(_ tool: AgentTool, command: String, to settings: [String: Any]) -> [String: Any] {
-        var settings = removing(from: settings)
+    private func adding(_ tool: AgentTool, to settings: [String: Any]) -> [String: Any] {
+        var settings = removing(from: settings, tool: tool)
         var events = settings["hooks"] as? [String: Any] ?? [:]
         for (event, matcher, state) in tool.events {
             var group: [String: Any] = [
-                "hooks": [["type": "command", "command": "\(command) \(tool.rawValue) \(state)", "async": true]]
+                "hooks": [["type": "command", "command": command(for: tool, state: state), "async": true]]
             ]
             if let matcher { group["matcher"] = matcher }
             events[event] = (events[event] as? [Any] ?? []) + [group]
@@ -194,7 +199,7 @@ public struct AgentHooks: Sendable {
 
     /// `settings` without the notch's hooks. Groups, events, and a `hooks` key left empty go too;
     /// everything else stays as it was.
-    static func removing(from settings: [String: Any]) -> [String: Any] {
+    private func removing(from settings: [String: Any], tool: AgentTool) -> [String: Any] {
         guard let events = settings["hooks"] as? [String: Any] else { return settings }
         var kept: [String: Any] = [:]
         for (event, value) in events {
@@ -204,9 +209,9 @@ public struct AgentHooks: Sendable {
             }
             let remaining = groups.compactMap { group -> Any? in
                 guard var group = group as? [String: Any], let handlers = group["hooks"] as? [Any],
-                    handlers.contains(where: isOurs)
+                    handlers.contains(where: { owns($0, tool: tool) })
                 else { return group }
-                let others = handlers.filter { !isOurs($0) }
+                let others = handlers.filter { !owns($0, tool: tool) }
                 if others.isEmpty { return nil }
                 group["hooks"] = others
                 return group
@@ -226,9 +231,9 @@ public struct AgentHooks: Sendable {
     /// JSON, since macOS 14 has no `jq`. It never blocks the agent and always exits 0.
     static let scriptSource = #"""
         #!/bin/sh
-        # ILoveNotch agent status, run by Claude Code's and Codex's hooks. ILoveNotch adds the hooks
+        # Notch Workspace agent status, run by Claude Code's and Codex's hooks. Notch Workspace adds the hooks
         # when you connect a tool in Settings > Agents and removes them when you disconnect.
-        # Usage: ilovenotch-agent-hook <claude|codex> <working|waiting|resumed|done|ended> < hook.json
+        # Usage: notchworkspace-agent-hook <claude|codex> <working|waiting|resumed|done|ended> < hook.json
         tool=$1
         event=$2
         dir="$(dirname "$0")/Agents"

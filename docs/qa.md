@@ -53,7 +53,7 @@ still to be set.
 - [ ] Calendar: edit an event's title and time from the notch and delete one (a second click confirms), then
   check both in Calendar and on iPhone; a repeating event changes only that day, and an invitation offers neither
 - [ ] Notes in an iCloud Drive folder: edits reach the iPhone's Files app, and a file named there keeps its name
-- [ ] Control-Option-N starts a note from another app and hands the keyboard back when the notch closes
+- [ ] Control-Option-Shift-N starts a note from another app and hands the keyboard back when the notch closes
 - [ ] Light and dark mode, Increase Contrast, Reduce Motion, Reduce Transparency, VoiceOver, keyboard-only use
 - [ ] Glass theme (macOS 26): every tab's text readable over a white, a black, and a busy wallpaper, and the glass
   the same on every tab, before and after typing in one; clicks on empty glass and between a tab's icon strokes

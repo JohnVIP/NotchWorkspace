@@ -87,7 +87,7 @@ private struct NotesSettings: View {
                 ForEach(NoteSort.allCases) { sort in Text(sort.name).tag(sort) }
             }
             Toggle(isOn: $notes.quickNoteShortcut) {
-                Text("Control-Option-N starts a new note")
+                Text("Control-Option-Shift-N starts a new note")
                 Text("Opens the notch on Notes from any app, ready to type.")
             }
         }
@@ -99,7 +99,7 @@ private struct NotesSettings: View {
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.prompt = "Use Folder"
-        panel.message = "Choose where ILoveNotch keeps your notes."
+        panel.message = "Choose where Notch Workspace keeps your notes."
         let iCloudDrive = FileManager.default.homeDirectoryForCurrentUser
             .appending(path: "Library/Mobile Documents/com~apple~CloudDocs", directoryHint: .isDirectory)
         if FileManager.default.fileExists(atPath: iCloudDrive.path) { panel.directoryURL = iCloudDrive }

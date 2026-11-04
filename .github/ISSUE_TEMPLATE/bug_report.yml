@@ -57,7 +57,6 @@ body:
       label: Installed from
       options:
         - GitHub release
-        - Mac App Store
         - Built from source
     validations:
       required: true
@@ -82,6 +81,6 @@ body:
       label: Logs or screenshots
       description: |
         Optional. Capture logs while reproducing with:
-        `log stream --level debug --predicate 'subsystem == "cafe.opennotch.app"'`
+        `log stream --level debug --predicate 'subsystem == "io.github.johnvip.notchworkspace"'`
         Logs can include event, reminder, or file names; remove anything private before posting.
       render: text

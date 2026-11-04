@@ -62,6 +62,7 @@ public final class NotchEngine {
     /// collapse a notch the pointer is on, a stray one can't open a notch it isn't on, and nothing
     /// collapses while a mouse button is held.
     func fire(_ deadline: Deadline) {
+        guard !Task.isCancelled else { return }
         timers.removeValue(forKey: deadline)?.cancel()
         if let check = pointerCheck?() {
             switch deadline {
@@ -82,10 +83,7 @@ public final class NotchEngine {
             // that fires hops back. Tolerance lets macOS coalesce the wakeup (Apple's energy guidance).
             timers[deadline] = Task.detached { [weak self] in
                 do { try await Task.sleep(for: delay, tolerance: delay / 10) } catch { return }
-                await MainActor.run {
-                    guard !Task.isCancelled else { return }
-                    self?.fire(deadline)
-                }
+                await self?.fire(deadline)
             }
         case .cancel(let deadline):
             timers.removeValue(forKey: deadline)?.cancel()

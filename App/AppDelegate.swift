@@ -1,23 +1,15 @@
 // SPDX-License-Identifier: MIT
 import AppKit
+import NotchAgents
 import NotchCore
 import NotchFeatures
 import NotchSurface
 import SwiftUI
 
-#if !APP_STORE
-    import NotchAgents
-#endif
-
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    #if APP_STORE
-        // The App Sandbox prevents Agents from adding hooks to other tools' settings.
-        private let preferences = NotchPreferences(unavailable: [.agents])
-    #else
-        private let preferences = NotchPreferences()
-        private let agents = AgentsFeature()
-    #endif
+    private let preferences = NotchPreferences()
+    private let agents = AgentsFeature()
     private let shelf = ShelfFeature()
     private let calendar: CalendarFeature
     private let tasks: TasksFeature
@@ -46,20 +38,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Show in Notch messages that arrived while launching, before there was a notch to show them.
     private var pendingMessages: [Activity] = []
     private var statusItem: StatusItemController?
-    private let updater = Updater()
     private lazy var settings = SettingsWindowController(
         preferences: preferences,
-        updater: updater,
         notchKey: notchKey,
         previewAnimation: { [weak self] in self?.coordinator?.previewAnimation() },
         featureSettings: { [unowned self] in self.settingsView(for: $0) })
 
     private var featureList: [any NotchFeature] {
-        #if APP_STORE
-            [shelf, calendar, tasks, notes, shortcuts, timer]
-        #else
-            [shelf, calendar, tasks, notes, shortcuts, timer, agents]
-        #endif
+        [shelf, calendar, tasks, notes, shortcuts, timer, agents]
     }
 
     private func tabView(for feature: FeatureID) -> AnyView {
@@ -71,11 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .shortcuts: return AnyView(shortcuts.view)
         case .timer: return AnyView(timer.view)
         case .agents:
-            #if APP_STORE
-                return AnyView(EmptyView())
-            #else
-                return AnyView(agents.view)
-            #endif
+            return AnyView(agents.view)
         }
     }
 
@@ -89,11 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .notes: return section(notes.settingsView)
         case .timer: return nil
         case .agents:
-            #if APP_STORE
-                return nil
-            #else
-                return section(agents.settingsView)
-            #endif
+            return section(agents.settingsView)
         }
     }
 
@@ -127,10 +105,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         volume.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         battery.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         accessories.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
-        #if !APP_STORE
-            agents.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
-            agents.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .agents) }
-        #endif
+        agents.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
+        agents.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .agents) }
         coordinator.start()
         self.coordinator = coordinator
         pendingMessages.forEach(showInNotch)
@@ -140,10 +116,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { return }
             notchKey.shortcut = preferences.notchShortcut
         }
-        statusItem = StatusItemController(updater: updater) { [weak self] in self?.settings.show($0) }
+        statusItem = StatusItemController { [weak self] in self?.settings.show($0) }
     }
 
-    /// Show in Notch links from scripts and other apps: ilovenotch://show?title=….
+    /// Show in Notch links from scripts and other apps: notchworkspace://show?title=….
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
             guard let message = ShowInNotch.activity(from: url) else {

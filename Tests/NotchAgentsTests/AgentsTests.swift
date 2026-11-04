@@ -10,7 +10,7 @@ import Testing
 private struct Sandbox {
     let root = FileManager.default.temporaryDirectory.appending(path: "Agents-\(UUID().uuidString)")
     var home: URL { root.appending(path: "home") }
-    var hooks: AgentHooks { AgentHooks(home: home, support: root.appending(path: "OpenNotch")) }
+    var hooks: AgentHooks { AgentHooks(home: home, support: root.appending(path: "NotchWorkspace")) }
 
     init(tools: [AgentTool] = AgentTool.allCases) throws {
         for tool in tools {
@@ -58,9 +58,14 @@ private struct Sandbox {
     }
 }
 
-/// Someone else's hooks, like the Agent Flow extension's, and a setting that isn't about hooks.
+/// Hooks registered by other tools and an independent Notch Workspace checkout.
 private var theirs: [String: Any] {
-    ["model": "opus", "hooks": ["Stop": [["hooks": [["type": "command", "command": "node flow.js", "timeout": 2]]]]]]
+    let commands = [
+        "node flow.js",
+        "'/tmp/OpenNotch/ilovenotch-agent-hook' claude done",
+        "'/tmp/other/notchworkspace-agent-hook' claude done",
+    ]
+    return ["model": "opus", "hooks": ["Stop": [["hooks": commands.map { ["type": "command", "command": $0] }]]]]
 }
 
 struct AgentHooksTests {
@@ -68,6 +73,7 @@ struct AgentHooksTests {
         let sandbox = try Sandbox()
         let hooks = sandbox.hooks
         try sandbox.write(theirs, for: .claude)
+        #expect(!hooks.isInstalled(.claude))
         try hooks.install(.claude)
         try hooks.install(.claude)  // twice: nothing doubles
 
@@ -79,7 +85,7 @@ struct AgentHooksTests {
         #expect(notification["matcher"] as? String == "permission_prompt|elicitation_dialog")
         let handler = try #require((notification["hooks"] as? [[String: Any]])?.first)
         #expect(handler["async"] as? Bool == true, "the agent never waits on it")
-        #expect((handler["command"] as? String)?.hasSuffix("ilovenotch-agent-hook' claude waiting") == true)
+        #expect((handler["command"] as? String)?.hasSuffix("notchworkspace-agent-hook' claude waiting") == true)
         let attributes = try FileManager.default.attributesOfItem(atPath: hooks.configFile(.claude).path)
         #expect(attributes[.posixPermissions] as? Int == 0o700, "a private settings file stays private")
 

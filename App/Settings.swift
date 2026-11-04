@@ -12,7 +12,6 @@ import SwiftUI
 @MainActor
 final class SettingsWindowController {
     private let preferences: NotchPreferences
-    private let updater: Updater
     private let notchKey: HotKey
     private let previewAnimation: () -> Void
     private let featureSettings: (FeatureID) -> AnyView?
@@ -21,11 +20,10 @@ final class SettingsWindowController {
 
     /// `featureSettings` supplies each tab's own settings, as the sections of its page.
     init(
-        preferences: NotchPreferences, updater: Updater, notchKey: HotKey,
+        preferences: NotchPreferences, notchKey: HotKey,
         previewAnimation: @escaping () -> Void, featureSettings: @escaping (FeatureID) -> AnyView?
     ) {
         self.preferences = preferences
-        self.updater = updater
         self.notchKey = notchKey
         self.previewAnimation = previewAnimation
         self.featureSettings = featureSettings
@@ -36,7 +34,7 @@ final class SettingsWindowController {
         if let page { selection.page = page }
         if window == nil {
             let root = SettingsView(
-                preferences: preferences, updater: updater, notchKey: notchKey,
+                preferences: preferences, notchKey: notchKey,
                 previewAnimation: previewAnimation, featureSettings: featureSettings, selection: selection)
             let host = NSHostingController(rootView: root)
             // The page's name goes in the toolbar, over a sidebar that runs to the top of the window.
@@ -71,7 +69,6 @@ struct SettingsView: View {
     static let size = CGSize(width: 715, height: 720)
 
     let preferences: NotchPreferences
-    let updater: Updater
     let notchKey: HotKey
     let previewAnimation: () -> Void
     let featureSettings: (FeatureID) -> AnyView?
@@ -106,7 +103,7 @@ struct SettingsView: View {
 
     @ViewBuilder private var page: some View {
         switch selection.page {
-        case .about: AboutSettings(updater: updater)
+        case .about: AboutSettings()
         case .general: GeneralPage(preferences: preferences, notchKey: notchKey)
         case .appearance: AppearancePage(preferences: preferences, previewAnimation: previewAnimation)
         case .displays: DisplaysPage(preferences: preferences)
@@ -188,7 +185,7 @@ private struct SettingsIcon: View {
     }
 }
 
-/// ILoveNotch itself, at the top of the sidebar where System Settings puts your account: it opens
+/// Notch Workspace itself, at the top of the sidebar where System Settings puts your account: it opens
 /// About.
 private struct AppRow: View {
     var body: some View {
@@ -198,8 +195,8 @@ private struct AppRow: View {
                 .frame(width: 36, height: 36)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
-                Text("ILoveNotch").font(.headline)
-                Text("Version \(Updater.version)").font(.caption).foregroundStyle(.secondary)
+                Text("Notch Workspace").font(.headline)
+                Text("Version \(AppVersion.display)").font(.caption).foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 4)
@@ -302,7 +299,7 @@ private struct GeneralPage: View {
                     Text("Reset to defaults")
                     Text("Tabs, their order, shortcuts, appearance, and displays. Your notes and shelf stay.")
                 }
-                .confirmationDialog("Reset ILoveNotch's settings?", isPresented: $confirmsReset) {
+                .confirmationDialog("Reset Notch Workspace's settings?", isPresented: $confirmsReset) {
                     Button("Reset to Defaults", role: .destructive) { preferences.reset() }
                 } message: {
                     Text("Every tab comes back in its first place, with the original shortcuts and look.")
@@ -455,7 +452,7 @@ private struct DisplaysPage: View {
             Section {
                 Toggle(isOn: $preferences.showOnAllDisplays) {
                     Text("Show on all displays")
-                    Text("Otherwise ILoveNotch uses the built-in display's notch, or the main display.")
+                    Text("Otherwise Notch Workspace uses the built-in display's notch, or the main display.")
                 }
             }
             Section {
@@ -500,12 +497,10 @@ private struct ActivitiesPage: View {
             }
             Section("Battery") {
                 Toggle("Show charging and battery", isOn: $preferences.showsBattery)
-                #if !APP_STORE
-                    Toggle(isOn: $preferences.showsAccessoryBattery) {
-                        Text("Show a Bluetooth accessory's battery when it connects")
-                        Text("Experimental: Apple keyboards, mice, and trackpads.")
-                    }
-                #endif
+                Toggle(isOn: $preferences.showsAccessoryBattery) {
+                    Text("Show a Bluetooth accessory's battery when it connects")
+                    Text("Experimental: Apple keyboards, mice, and trackpads.")
+                }
             }
         }
     }
@@ -562,9 +557,8 @@ private struct ShortcutRecorder: View {
     }
 }
 
-/// The app, its version and updates, then asks for a star and for help, in the icon's coral and peach.
+/// The app version and project links.
 private struct AboutSettings: View {
-    let updater: Updater
 
     static let coral = Color(red: 0.93, green: 0.30, blue: 0.24)
     static let peach = Color(red: 0.95, green: 0.50, blue: 0.22)
@@ -582,34 +576,20 @@ private struct AboutSettings: View {
                 }
                 .accessibilityHidden(true)
             VStack(spacing: 4) {
-                (Text("I") + Text("Love").foregroundStyle(Self.coral) + Text("Notch"))
+                Text("Notch Workspace")
                     .font(.system(.title, design: .rounded).bold())
-                Text("Version \(Updater.version)")
+                Text("Version \(AppVersion.display)")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
                     .background(.quaternary, in: Capsule())
             }
-            #if !APP_STORE  // the App Store updates its edition
-                if updater.sourceDirectory != nil {
-                    Button(
-                        updater.state == .updating ? "Updating…" : "Update ILoveNotch", action: updater.updateFromSource
-                    )
-                    .disabled(updater.state == .updating)
-                    if updater.state == .failed {
-                        Button("The update failed. Show Log", action: updater.showLog).buttonStyle(.link)
-                    }
-                    Text("Rebuilds from this Mac's checkout and relaunches.").font(.caption).foregroundStyle(.secondary)
-                } else {
-                    Button("Check for Updates…", action: updater.checkForUpdates)
-                }
-            #endif
             AboutCard(url: Links.repository, glow: Self.coral) {
                 HStack(spacing: 12) {
                     Image(systemName: "star.fill").font(.title)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Star ILoveNotch on GitHub").font(.headline)
+                        Text("Star Notch Workspace on GitHub").font(.headline)
                         Text("A star is how other Mac users find it.").font(.callout).opacity(0.9)
                     }
                     Spacer(minLength: 0)
@@ -628,11 +608,9 @@ private struct AboutSettings: View {
                 AboutTile(
                     title: "Report a Bug", detail: "Or ask for a feature", symbol: "ladybug.fill", tint: .orange,
                     url: Links.newIssue)
-                #if !APP_STORE  // the App Store takes no outside payments (3.1.1)
-                    AboutTile(
-                        title: "Sponsor", detail: "Fuel the next one", symbol: "heart.fill", tint: .pink,
-                        url: Links.sponsor)
-                #endif
+                AboutTile(
+                    title: "Sponsor", detail: "Fuel the next one", symbol: "heart.fill", tint: .pink,
+                    url: Links.sponsor)
             }
             Spacer(minLength: 0)
             VStack(spacing: 4) {

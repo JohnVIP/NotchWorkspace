@@ -48,7 +48,7 @@ public final class NotesFeature: NotchFeature {
     public var sort: NoteSort {
         didSet { defaults.set(sort.rawValue, forKey: Self.sortKey) }
     }
-    /// Per-feature setting: Control-Option-N opens a new note from anywhere.
+    /// Per-feature setting: Control-Option-Shift-N opens a new note from anywhere.
     public var quickNoteShortcut: Bool {
         didSet { defaults.set(quickNoteShortcut, forKey: Self.shortcutKey) }
     }
@@ -71,8 +71,6 @@ public final class NotesFeature: NotchFeature {
     @ObservationIgnored private var unsaved: Set<Note.ID> = []
     @ObservationIgnored private var pendingSave: Task<Void, Never>?
     @ObservationIgnored private var clearNotice: Task<Void, Never>?
-    /// The chosen folder while its security scope is open, in a sandboxed build.
-    @ObservationIgnored private var folderAccess: URL?
 
     /// `directory` replaces both the default folder and any folder the user chose, for tests.
     public init(directory: URL? = nil, defaults: UserDefaults = .standard) {
@@ -83,7 +81,6 @@ public final class NotesFeature: NotchFeature {
         let chosen = directory == nil ? defaults.data(forKey: Self.folderKey).flatMap(Self.resolve) : nil
         self.directory = chosen ?? defaultDirectory
         usesCustomFolder = chosen != nil
-        if let chosen, ShelfFeature.sandboxed, chosen.startAccessingSecurityScopedResource() { folderAccess = chosen }
         try? FileManager.default.createDirectory(at: self.directory, withIntermediateDirectories: true)
     }
 
@@ -189,8 +186,7 @@ public final class NotesFeature: NotchFeature {
     public func chooseFolder(_ folder: URL) {
         flush()
         guard folder.standardizedFileURL != directory.standardizedFileURL else { return }
-        let options: URL.BookmarkCreationOptions = ShelfFeature.sandboxed ? .withSecurityScope : []
-        guard let bookmark = try? folder.bookmarkData(options: options) else {
+        guard let bookmark = try? folder.bookmarkData() else {
             show(notice: "Couldn't use that folder")
             return
         }
@@ -333,9 +329,6 @@ public final class NotesFeature: NotchFeature {
     }
 
     private func switchFolder(to folder: URL, custom: Bool) {
-        folderAccess?.stopAccessingSecurityScopedResource()
-        folderAccess = nil
-        if custom, ShelfFeature.sandboxed, folder.startAccessingSecurityScopedResource() { folderAccess = folder }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         directory = folder
         usesCustomFolder = custom
@@ -349,7 +342,6 @@ public final class NotesFeature: NotchFeature {
     /// folder is chosen.
     private static func resolve(_ bookmark: Data) -> URL? {
         var stale = false
-        let options: URL.BookmarkResolutionOptions = ShelfFeature.sandboxed ? .withSecurityScope : []
-        return try? URL(resolvingBookmarkData: bookmark, options: options, bookmarkDataIsStale: &stale)
+        return try? URL(resolvingBookmarkData: bookmark, bookmarkDataIsStale: &stale)
     }
 }

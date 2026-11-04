@@ -27,7 +27,7 @@ public final class HotKey {
     private static var registered: [UInt32: HotKey] = [:]
     private static var handler: EventHandlerRef?
     private static var lastID: UInt32 = 0
-    private static let signature: OSType = 0x494C_4E4B  // "ILNK"
+    private static let signature: OSType = 0x4E54_5753  // "NTWS"
 
     public init() {
         Self.lastID += 1
@@ -75,8 +75,8 @@ public final class HotKey {
 extension KeyShortcut {
     /// Escape, alone, for closing what a shortcut opened.
     public static let escape = KeyShortcut(keyCode: UInt32(kVK_Escape), modifiers: 0, key: "⎋")
-    /// Control-Option-N, which starts a new note.
-    public static let newNote = KeyShortcut(keyCode: UInt32(kVK_ANSI_N), modifiers: control | option, key: "N")
+    /// Control-Option-Shift-N starts a new note.
+    public static let newNote = KeyShortcut(keyCode: UInt32(kVK_ANSI_N), modifiers: control | option | shift, key: "N")
 
     /// The shortcut a key press makes, or nil without Command, Option, or Control: a shortcut
     /// plain typing could set off isn't one.

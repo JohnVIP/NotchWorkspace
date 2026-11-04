@@ -103,7 +103,7 @@ struct HotKeyTests {
 
 struct ShowInNotchTests {
     @Test func aLinkShowsItsMessageForAWhile() throws {
-        let url = try #require(URL(string: "ilovenotch://show?title=Build%20done&symbol=hammer.fill&seconds=6"))
+        let url = try #require(URL(string: "notchworkspace://show?title=Build%20done&symbol=hammer.fill&seconds=6"))
         let message = try #require(ShowInNotch.activity(from: url))
         #expect(message.title == "Build done" && message.symbol == "hammer.fill" && message.duration == .seconds(6))
         #expect(message.feature == nil, "it belongs to no tab, so it shows whatever tabs are on")
@@ -124,7 +124,8 @@ struct ShowInNotchTests {
     }
 
     @Test(arguments: [
-        "ilovenotch://open?tab=media", "https://show?title=Hi", "ilovenotch://show", "ilovenotch://show?title=",
+        "ilovenotch://show?title=Upstream", "notchworkspace://open?tab=media", "https://show?title=Hi",
+        "notchworkspace://show", "notchworkspace://show?title=",
     ])
     func otherLinksAreIgnored(link: String) throws {
         #expect(ShowInNotch.activity(from: try #require(URL(string: link))) == nil)

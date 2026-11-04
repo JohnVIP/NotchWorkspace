@@ -1,24 +1,19 @@
-
-
-https://github.com/user-attachments/assets/9d0c486c-5169-4297-b8b9-8fedbb9eadda
-
 <p align="center">
-  <img src="docs/media/icon.png" width="128" alt="The ILoveNotch icon: a notch with heart eyes">
+  <img src="docs/media/icon.png" width="128" alt="The upstream ILoveNotch icon: a notch with heart eyes">
 </p>
 
-<h1 align="center">ILoveNotch</h1>
+<h1 align="center">Notch Workspace</h1>
 
 <p align="center"><b>Your MacBook's notch, finally useful.</b> Free and open source.</p>
 
 <p align="center">
-  <a href="https://github.com/niyamvora/ILoveNotch/releases/latest"><img src="https://img.shields.io/github/v/release/niyamvora/ILoveNotch?label=download&logo=apple&color=e8573f" alt="Download the latest release"></a>
-  <a href="https://github.com/niyamvora/ILoveNotch/actions/workflows/ci.yml"><img src="https://github.com/niyamvora/ILoveNotch/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/JohnVIP/NotchWorkspace/actions/workflows/ci.yml"><img src="https://github.com/JohnVIP/NotchWorkspace/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
   <a href="#build--run"><img src="https://img.shields.io/badge/macOS-14.6%2B-black?logo=apple" alt="macOS 14.6 or later"></a>
   <a href="https://github.com/sponsors/niyamvora"><img src="https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white" alt="Sponsor"></a>
 </p>
 
-An **original, open-source** macOS menu-notch utility — turns the notch on Apple
+A personal macOS fork of [ILoveNotch](https://github.com/niyamvora/ILoveNotch) — turns the notch on Apple
 Silicon MacBooks into an interactive tray for files, calendars,
 tasks, notes, shortcuts, timers, and coding agent status.
 Built with SwiftUI and AppKit.
@@ -36,23 +31,10 @@ Built with SwiftUI and AppKit.
 > comes from permissively licensed open-source projects (MIT, BSD, CC0), listed
 > in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-## Download
-
-**[Download ILoveNotch](https://github.com/niyamvora/ILoveNotch/releases/latest/download/ILoveNotch.dmg)**
-(free, macOS 14.6 or later): open the download, drag ILoveNotch into
-Applications, and open it. It updates itself from then on. See
-[what's new](https://github.com/niyamvora/ILoveNotch/releases/latest), and every
-version in the [changelog](CHANGELOG.md).
-
-- **Homebrew:** `brew install --cask niyamvora/tap/ilovenotch`
-- **Mac App Store:** in review. The App Store edition excludes Agents. Try it now through the
-  [TestFlight beta](https://testflight.apple.com/join/6p3zqhCS).
-- **From source:** see [Build & run](#build--run).
-
 ## What it does
 
 - **The notch.** Opens when you hover it, click it, pull down with two fingers,
-  or press ⌃⌥O in any app, and closes when you move away. Closed, it hides
+  or press ⌃⌥W in any app, and closes when you move away. Closed, it hides
   behind the camera housing until it has something to tell you, like a meeting
   about to start. Pick how it opens and closes (spring, jelly, pop, smooth,
   snappy, or instant), drag its bottom-right corner to resize it, and pin it
@@ -85,17 +67,13 @@ version in the [changelog](CHANGELOG.md).
   [More below](#agent-status).
 - **System activities.** Volume, charging and battery, and Bluetooth accessory
   batteries show briefly in the notch.
-- **Show in Notch.** A Shortcuts action and an `ilovenotch://` link put your own
+- **Show in Notch.** A Shortcuts action and an `notchworkspace://` link put your own
   message in the notch, from any shortcut, automation, script, or app.
   [More below](#show-in-notch).
 - **Settings.** Laid out like System Settings: a sidebar with a page for each
   part of the app and each tab, marked with colored icons, and each tab's
   switch at the top of its page. The notch's gear button or the menu bar item
   opens it.
-- **Updates.** A build from this checkout updates itself from the menu bar;
-  signed releases update through Sparkle. A sandboxed Mac App Store edition
-  builds from the same code.
-
 ## Why
 
 Notch utilities are genuinely useful, but the popular closed-source one drew
@@ -157,52 +135,19 @@ and the [architecture diagram](docs/plan/architecture.html).
 
 ## Build & run
 
-Requires macOS 14.6+, Xcode 16+, and [Homebrew](https://brew.sh).
+The project targets macOS 14.6 and uses Swift tools 6.2, an Xcode SDK with macOS 26 APIs, and XcodeGen. From a checkout of this fork:
 
 ```bash
-git clone https://github.com/niyamvora/ILoveNotch.git
-cd ILoveNotch
-make setup                        # installs XcodeGen (Brewfile)
-make run                          # generate the Xcode project, build, and launch ILoveNotch.app
-make install                      # build a Release app into /Applications and launch it
-make update                       # pull main when it's clean, then reinstall and relaunch
-make test                         # unit, snapshot, and performance tests (plain SwiftPM)
-make check                        # everything CI runs: secrets, lint, tests, build, licenses
-make build-app-store              # the sandboxed App Store edition
-scripts/soak.sh                   # sample the running app's CPU and memory against the budgets
+make build SIGNING_IDENTITY=
+make check-isolation SIGNING_IDENTITY=
+make test
 ```
 
-`make project` generates `OpenNotch.xcodeproj` (git-ignored) for working in Xcode. The project,
-its targets, and the code keep the original name OpenNotch; the app is ILoveNotch everywhere
-people see it.
-Watch the state machine live with:
+The local build is `.build/xcode/Build/Products/Debug/NotchWorkspace.app`. `make run` opens it from the build directory. See [runtime isolation](docs/updates.md) for the identity, local paths, and rollback.
 
 ```bash
-log stream --level debug --predicate 'subsystem == "cafe.opennotch.app"'
+log stream --level debug --predicate 'subsystem == "io.github.johnvip.notchworkspace"'
 ```
-
-### Test it on your Mac
-
-1. `make install` builds a Release app into `/Applications` and launches it.
-   There's no Dock icon: look for the notch, and for the ILoveNotch item in the
-   menu bar (Settings…, Update ILoveNotch, About, What's New, Sponsor, Quit).
-2. Quit other notch apps first; two apps can't share the notch.
-3. Hover the notch (or click it, or pull down with two fingers), then try each
-   tab. Calendar and Tasks ask for access the first time you tap **Continue**.
-   Resize the open notch by dragging its bottom-right corner, keep it open with
-   the pin beside Settings, and pick how it looks, opens, and closes in
-   **Settings › Appearance**.
-4. To get the latest, choose **Update ILoveNotch** from the menu bar item (or run
-   `make update`). It pulls `main` when your checkout is clean, rebuilds, and
-   relaunches; see [updates](docs/updates.md).
-5. With an Apple Development certificate in your keychain (Xcode › Settings ›
-   Accounts), builds are signed with it and keep Calendar and Reminders access
-   across updates. Without one they're ad-hoc signed, and macOS asks again after
-   each rebuild.
-6. To start at login, turn on **Settings › General › Launch at login**.
-7. To uninstall, choose **Quit** from the menu bar item and delete
-   `/Applications/ILoveNotch.app`; data lives in
-   `~/Library/Application Support/OpenNotch`.
 
 ## Agent status
 
@@ -220,7 +165,6 @@ disconnecting takes out exactly those. The hooks run in the background, so an
 agent never waits on them, and they write one small file per session: its
 state, project folder, terminal app, and what it's waiting for, never your
 prompts or code. Nothing leaves your Mac; see [PRIVACY.md](PRIVACY.md#agent-status).
-Agents is available in the GitHub build, where it can write to the tools’ hook settings.
 
 ## Show in Notch
 
@@ -229,20 +173,19 @@ many seconds to show it, so any shortcut or automation can put a message in the
 notch. Scripts and other apps can open a link instead:
 
 ```bash
-open -g "ilovenotch://show?title=Build%20done&symbol=hammer.fill&seconds=5"
+open -g "notchworkspace://show?title=Build%20done&symbol=hammer.fill&seconds=5"
 ```
 
 A message shows for 1 to 30 seconds (4 by default) and is never stored. It's
 only ever displayed: links in it aren't opened, line breaks and control
-characters are removed, and it's cut to 80 characters. Both editions have it,
-the App Store one too.
+characters are removed, and it's cut to 80 characters.
 
 ## Tasks and notes
 
 Tasks use Apple **Reminders** through EventKit, so they sync to your iPhone over
 iCloud with no server to run, and alerts set in the notch ring on every device.
 Notes are Markdown files named after their first line, in
-`~/Library/Application Support/OpenNotch/Notes` by default. To read them on an
+`~/Library/Application Support/NotchWorkspace/Notes` by default. To read them on an
 iPhone, pick a folder in iCloud Drive in Settings › Notes: they show
 up in the Files app and in Markdown apps such as Obsidian. A note's color and
 pin are kept in a small front matter block those apps understand, and a file you

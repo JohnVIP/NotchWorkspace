@@ -125,7 +125,7 @@ struct NotchView: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("ILoveNotch")
+        .accessibilityLabel("Notch Workspace")
         .accessibilityAction(named: presentation.openTab == nil ? "Open" : "Close") {
             engine.send(presentation.openTab == nil ? .clicked : .dismiss)
         }

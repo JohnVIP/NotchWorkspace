@@ -4,8 +4,7 @@ Every notable change to ILoveNotch, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Each version's section is also its release notes: `make release` puts it on the
-GitHub release and in the app's update prompt. Changes go under **Unreleased**
+Entries below describe upstream ILoveNotch releases.
 as they land, written for the people who use the app
 ([CONTRIBUTING.md](CONTRIBUTING.md#versioning-and-releases)).
 

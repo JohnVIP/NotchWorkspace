@@ -166,9 +166,9 @@ public final class NotchPreferences {
         }
     }
 
-    // ponytail: ⌃⌥O for "open", as Notes has ⌃⌥N for a new note; Settings changes it.
+    // ⌃⌥W opens the workspace.
     public nonisolated static let defaultNotchShortcut = KeyShortcut(
-        keyCode: 31, modifiers: KeyShortcut.control | KeyShortcut.option, key: "O")
+        keyCode: 13, modifiers: KeyShortcut.control | KeyShortcut.option, key: "W")
 
     /// The open notch's size, set by dragging its bottom-right corner. Always within the minimum and
     /// maximum.
@@ -192,14 +192,8 @@ public final class NotchPreferences {
         }
 
     @ObservationIgnored private let defaults: UserDefaults
-    /// Features this build can offer, in tab order. The App Store edition leaves out the ones the
-    /// App Sandbox can't run.
-    public let available: [FeatureID]
-
-    public init(defaults: UserDefaults = .standard, unavailable: Set<FeatureID> = []) {
+    public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        let available = FeatureID.allCases.filter { !unavailable.contains($0) }
-        self.available = available
         func features(_ key: String) -> Set<FeatureID> {
             Set((defaults.stringArray(forKey: key) ?? []).compactMap(FeatureID.init(rawValue:)))
         }
@@ -207,8 +201,8 @@ public final class NotchPreferences {
         // The stored order, then whatever it doesn't know yet (a feature added by an update) at the end.
         var placed: Set<FeatureID> = []
         let stored = (defaults.stringArray(forKey: Key.tabOrder) ?? []).compactMap(FeatureID.init(rawValue:))
-            .filter { available.contains($0) && placed.insert($0).inserted }
-        tabOrder = stored + available.filter { !placed.contains($0) }
+            .filter { placed.insert($0).inserted }
+        tabOrder = stored + FeatureID.allCases.filter { !placed.contains($0) }
         drawerOnly = features(Key.drawerOnly)
         showOnAllDisplays = defaults.bool(forKey: Key.showOnAllDisplays)
         pillDisplays = Set(defaults.stringArray(forKey: Key.pillDisplays) ?? [])
@@ -289,7 +283,7 @@ public final class NotchPreferences {
     /// Restores every preference to its default.
     public func reset() {
         disabledFeatures = []
-        tabOrder = available
+        tabOrder = FeatureID.allCases
         drawerOnly = []
         showOnAllDisplays = false
         pillDisplays = []

@@ -69,7 +69,6 @@ struct NotchPreferencesTests {
         let order = NotchPreferences(defaults: defaults).tabOrder
         #expect(order.prefix(2) == [.timer, .calendar])
         #expect(Array(order.dropFirst(2)) == FeatureID.allCases.filter { $0 != .timer && $0 != .calendar })
-        #expect(!NotchPreferences(defaults: defaults, unavailable: [.agents]).tabOrder.contains(.agents))
     }
 
     @Test func resetRestoresTheDefaults() {
@@ -113,8 +112,8 @@ struct NotchPreferencesTests {
         #expect(NotchPreferences(defaults: defaults).animationStyle == .spring)
     }
 
-    @Test func theNotchShortcutStartsAsControlOptionOAndCanBeChangedOrCleared() {
-        #expect(NotchPreferences(defaults: defaults).notchShortcut?.display == "⌃⌥O")
+    @Test func theNotchShortcutStartsAsControlOptionWAndCanBeChangedOrCleared() {
+        #expect(NotchPreferences(defaults: defaults).notchShortcut?.display == "⌃⌥W")
         let command = KeyShortcut(keyCode: 49, modifiers: KeyShortcut.command | KeyShortcut.shift, key: "Space")
         NotchPreferences(defaults: defaults).notchShortcut = command
         #expect(NotchPreferences(defaults: defaults).notchShortcut == command)

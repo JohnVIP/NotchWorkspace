@@ -1,11 +1,11 @@
 name: CI
 
-# Pull requests into main, and by hand from the Actions tab. Not pushes to main: the pull request
-# already tested that code, so a run there would repeat it.
 on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: ["codex/**"]
   workflow_dispatch:
 
 concurrency:
@@ -15,9 +15,6 @@ concurrency:
 permissions:
   contents: read
 
-# main requires the three checks below by name. A job skipped by its `if` still reports success, so
-# a draft or a change to docs alone passes in seconds without starting a Mac. Otherwise three jobs
-# run side by side, so a run takes about as long as its slowest compile.
 jobs:
   changes:
     name: What changed
@@ -39,8 +36,8 @@ jobs:
           [ -z "$PR" ] && { echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; }  # a run by hand checks everything
           files=$(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only)
           echo "$files"
-          # Anything but Markdown, docs/, the appcast, and the license is code.
-          if grep -qvE '^(docs/.*|.*\.md|appcast\.xml|LICENSE)$' <<< "$files"; then
+          # Anything but Markdown, docs/ and the license is code.
+          if grep -qvE '^(docs/.*|.*\.md|LICENSE)$' <<< "$files"; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           else
             echo "code=false" >> "$GITHUB_OUTPUT"
@@ -65,9 +62,6 @@ jobs:
       - name: Formatting
         run: make lint
 
-      - name: Release notes for this version
-        run: make changelog
-
       - name: Unit and performance tests
         run: make test
 
@@ -84,28 +78,9 @@ jobs:
         run: brew install xcodegen
 
       # Release, since the optimizer has crashed on code that builds in Debug, but for one
-      # architecture and without a dSYM: this checks that it compiles, a third faster. Releases
-      # build both architectures (scripts/release.sh).
-      - name: Release build
-        run: make build CONFIGURATION=Release XCODEBUILD_ARGS='ONLY_ACTIVE_ARCH=YES DEBUG_INFORMATION_FORMAT=dwarf'
+      # architecture and without a dSYM: this checks the isolated bundle.
+      - name: Build and verify isolation
+        run: make check-isolation CONFIGURATION=Release SIGNING_IDENTITY= XCODEBUILD_ARGS='ONLY_ACTIVE_ARCH=YES DEBUG_INFORMATION_FORMAT=dwarf'
 
-      # After the build, so Xcode has resolved the app's packages (Sparkle) for the check.
       - name: License check
         run: make licenses
-
-  app-store:
-    name: App Store edition
-    needs: changes
-    if: needs.changes.outputs.code == 'true'
-    runs-on: macos-26
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
-      # Debug: this checks the edition's own code (APP_STORE) compiles, in 40% less time. The job
-      # above runs the optimizer over the same modules, and uploads build Release (scripts/app-store.sh).
-      - name: Debug build
-        run: make build-app-store CONFIGURATION=Debug

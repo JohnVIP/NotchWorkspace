@@ -1,4 +1,4 @@
-# Build output (build/ holds releases, App Store uploads, and soak results)
+# Build output (build/ holds soak results)
 .build/
 build/
 .swiftpm/
@@ -37,7 +37,7 @@ extracted/
 *.pem
 .env
 .env.*
-# Release credentials (paths and IDs) for scripts/release.sh; see release.env.example
+# Old release credentials may still exist in local checkouts.
 release.env
 
 # Tool receipts
