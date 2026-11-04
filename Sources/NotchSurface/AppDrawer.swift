@@ -4,14 +4,18 @@ import SwiftUI
 
 /// Every app in the notch as a grid, like Launchpad: the ones in the tab row, the ones kept in the
 /// drawer only, and those turned off, dimmed. A click opens one, turning it on first if it was off,
-/// and the grid button in the header comes back here. The last tile edits the tab row; a right-click
-/// puts an app on the row or keeps it in the drawer. A small notch gets smaller tiles, so every app
-/// fits without scrolling; they scroll only if even those don't fit.
+/// and the grid button in the header comes back here. The last tile edits the tab row in place
+/// (`TabEditor`) and turns into Done; a right-click puts an app on the row or keeps it in the drawer.
+/// A small notch gets smaller tiles, so every app fits without scrolling; they scroll only if even
+/// those don't fit.
 struct AppDrawer: View {
     let preferences: NotchPreferences
     /// The app open under the drawer, lit.
     let current: FeatureID
+    /// Editing the tab row; nil outside edit mode.
+    var editor: TabEditor?
     let open: (FeatureID) -> Void
+    /// Starts editing, or ends it.
     let edit: () -> Void
 
     var body: some View {
@@ -31,11 +35,21 @@ struct AppDrawer: View {
             spacing: compact ? 6 : 10
         ) {
             ForEach(Array(apps.enumerated()), id: \.element) { index, feature in
-                tile(feature, compact: compact).modifier(Entrance(order: index))
+                Group {
+                    if let editor, !preferences.rowTabs.contains(feature) {
+                        EditingTile(editor: editor, feature: feature, compact: compact)
+                    } else {
+                        tile(feature, compact: compact)
+                    }
+                }
+                .modifier(Entrance(order: index))
             }
             editTile(compact: compact).modifier(Entrance(order: apps.count))
         }
         .padding(.vertical, 2)
+        // A tab dragged down from the row lights the grid it would drop into.
+        .background(.white.opacity(editor?.hiding == true ? 0.08 : 0), in: RoundedRectangle(cornerRadius: 14))
+        .animation(.easeOut(duration: 0.15), value: editor?.hiding)
     }
 
     private func tile(_ feature: FeatureID, compact: Bool) -> some View {
@@ -46,6 +60,7 @@ struct AppDrawer: View {
         } action: {
             open(feature)
         }
+        .allowsHitTesting(editor == nil)  // while editing, the row's own tabs move it
         .help(off ? "Turn \(feature.title) on and open it" : "Open \(feature.title)")
         .accessibilityLabel(off ? "\(feature.title), off" : feature.title)
         .accessibilityAddTraits(feature == current ? .isSelected : [])
@@ -61,18 +76,23 @@ struct AppDrawer: View {
         }
     }
 
+    /// Edit, or Done while editing, solid then: the tile clicked to start is the one that ends it.
     private func editTile(compact: Bool) -> some View {
-        DrawerTile(title: "Edit", compact: compact, dimmed: false) { hovering in
+        let editing = editor != nil
+        return DrawerTile(title: editing ? "Done" : "Edit", compact: compact, dimmed: false) { hovering in
             let shape = RoundedRectangle(cornerRadius: compact ? 9 : 11, style: .continuous)
-            TablerIcon(name: "pencil", size: compact ? 17 : 19)
+            TablerIcon(name: editing ? "check" : "pencil", size: compact ? 17 : 19)
                 .frame(width: compact ? 38 : 46, height: compact ? 30 : 38)
-                .background(.white.opacity(hovering ? 0.1 : 0), in: shape)
-                .overlay(shape.strokeBorder(.white.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [3, 2.5])))
+                .background(.white.opacity(editing ? 0.24 : hovering ? 0.1 : 0), in: shape)
+                .overlay(
+                    shape.strokeBorder(
+                        .white.opacity(editing ? 0.55 : 0.35),
+                        style: StrokeStyle(lineWidth: 1, dash: editing ? [] : [3, 2.5])))
         } action: {
             edit()
         }
-        .help("Arrange the tab row")
-        .accessibilityLabel("Edit the tab row")
+        .help(editing ? "Done editing tabs" : "Arrange the tab row")
+        .accessibilityLabel(editing ? "Done editing tabs" : "Edit the tab row")
     }
 }
 
@@ -105,20 +125,32 @@ private struct DrawerTile<Icon: View>: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: compact ? 3 : 4) {
-                icon(hovering)
-                Text(title)
-                    .font(.system(size: compact ? 8.5 : 9.5, weight: .medium))
-                    .foregroundStyle(.white.opacity(hovering ? 0.9 : 0.65))
-                    .lineLimit(1)
-            }
-            .frame(width: compact ? 48 : 60)
-            .opacity(dimmed ? 0.45 : 1)
-            .contentShape(Rectangle())
+            TileLabel(title: title, compact: compact, hovering: hovering) { icon(hovering) }
+                .opacity(dimmed ? 0.45 : 1)
+                .contentShape(Rectangle())
         }
         .buttonStyle(TilePress())
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.12), value: hovering)
+    }
+}
+
+/// A tile's face, in the drawer and while editing there: an icon over its name.
+struct TileLabel<Icon: View>: View {
+    let title: String
+    let compact: Bool
+    var hovering = false
+    @ViewBuilder let icon: Icon
+
+    var body: some View {
+        VStack(spacing: compact ? 3 : 4) {
+            icon
+            Text(title)
+                .font(.system(size: compact ? 8.5 : 9.5, weight: .medium))
+                .foregroundStyle(.white.opacity(hovering ? 0.9 : 0.65))
+                .lineLimit(1)
+        }
+        .frame(width: compact ? 48 : 60)
     }
 }
 

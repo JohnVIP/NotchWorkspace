@@ -92,8 +92,8 @@ struct NotchSnapshotTests {
         try draw("expanded-smallest", metrics: notched, events: [.show, .clicked], preferences: preferences)
     }
 
-    /// Editing the tabs, with a few in the tray, at the default size and the smallest, and with every
-    /// tab in the row.
+    /// Editing the tabs in the drawer, with a few apps off the row, at the default size and the
+    /// smallest, and with every tab in the row.
     @Test func theTabEditorRenders() throws {
         let preferences = Self.preferences()
         preferences.setEnabled(.usage, false)
@@ -140,15 +140,16 @@ struct NotchSnapshotTests {
             dropFiles: { _ in false },
             openSettings: {})
         let panel = metrics.panelFrame.size
+        // Editing happens in the drawer. The room is about what the header leaves the tabs.
         let view = NotchView(
-            engine: engine, metrics: metrics, preferences: preferences, content: content, editing: editing,
-            drawer: drawer
+            engine: engine, metrics: metrics, preferences: preferences, content: content,
+            editor: editing ? TabEditor(preferences: preferences, room: 262) : nil, drawer: drawer || editing
         )
         .frame(width: panel.width, height: panel.height)
         .background(Color(white: 0.82))  // stands in for the desktop behind the transparent panel
         // The drawer's tiles pop in on appearing; without animation, a moment later they're in place.
-        .transaction { if drawer { $0.animation = nil } }
-        let image = try #require(Self.render(view, size: panel, name: name, settle: drawer))
+        .transaction { if drawer || editing { $0.animation = nil } }
+        let image = try #require(Self.render(view, size: panel, name: name, settle: drawer || editing))
         #expect(image.pixelsWide > 0 && image.pixelsHigh > 0)
     }
 

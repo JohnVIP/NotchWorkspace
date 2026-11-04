@@ -36,8 +36,8 @@ struct NotchView: View {
     let metrics: NotchMetrics
     let preferences: NotchPreferences
     let content: NotchContent
-    /// Editing the tab row, in place of the open tab (`TabEditor`).
-    @State var editing = false
+    /// Editing the tab row, right in the drawer; nil outside edit mode.
+    @State var editor: TabEditor? = nil
     /// Every app as a grid, over the open tab (`AppDrawer`).
     @State var drawer = false
 
@@ -51,6 +51,8 @@ struct NotchView: View {
     @State private var resizeStart: CGSize?
     /// Editing pinned the notch, so Done unpins it again.
     @State private var pinnedToEdit = false
+    /// Editing opened the drawer, from the tab row's menu, so Done closes it again.
+    @State private var drawerToEdit = false
     /// The open tab came from the drawer, so its content zooms in rather than sliding across.
     @State private var fromDrawer = false
     @Namespace private var selection
@@ -116,9 +118,10 @@ struct NotchView: View {
         // Closing ends editing and the drawer, so the notch opens on a tab next time.
         .onChange(of: presentation.openTab == nil) { _, closed in
             if closed {
-                editing = false
+                editor = nil
                 drawer = false
                 pinnedToEdit = false
+                drawerToEdit = false
             }
         }
         .accessibilityElement(children: .contain)
@@ -261,47 +264,61 @@ struct NotchView: View {
     }
 
     private func expanded(tab: FeatureID, pinned: Bool) -> some View {
-        Group {
-            if editing {
-                TabEditor(preferences: preferences, room: tabRoom, done: finishEditing)
-                    .transition(.opacity)
-            } else {
-                VStack(spacing: 8) {
-                    // Liquid Glass controls, as a macOS 26 toolbar groups them: the tabs in one capsule,
-                    // All Apps in its own circle apart from them, and the pin with Settings.
-                    HStack(spacing: Self.tabSpacing) {
-                        tabBar(selected: tab)
-                        headerButton(
-                            drawer ? "layout-grid-filled" : "layout-grid",
-                            label: drawer ? "Back to \(tab.title)" : "All Apps", lit: drawer
-                        ) { showDrawer(!drawer) }
-                        .background(GlassPlatter(shape: Circle()))
-                        .padding(.leading, Self.appsGap)
-                        Spacer(minLength: 0)
-                        HStack(spacing: 0) {
-                            headerButton(pinned ? "pin-filled" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
-                                engine.send(.togglePin)
-                            }
-                            headerButton("settings", label: "Settings") { content.openSettings() }
-                        }
-                        .background(GlassPlatter(shape: Capsule()))
-                    }
-                    if drawer {
-                        AppDrawer(preferences: preferences, current: tab, open: openFromDrawer, edit: startEditing)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                            .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 1.04)))
-                    } else {
-                        content.tab(tab)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                            // Overlay scroll bars would sit on top of charts and lists; faded edges show there's more.
-                            .scrollIndicators(.never)
-                            .id(tab)
-                            .transition(tabTransition)
-                            .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.74), value: tab)
-                    }
+        VStack(spacing: 8) {
+            // Liquid Glass controls, as a macOS 26 toolbar groups them: the tabs in one capsule,
+            // All Apps in its own circle apart from them, and the pin with Settings. Editing keeps
+            // this screen: the tabs wiggle where they are, and Done stands in for the pin and Settings.
+            HStack(spacing: Self.tabSpacing) {
+                if let editor {
+                    EditingRow(editor: editor).background(GlassPlatter(shape: Capsule()))
+                } else {
+                    tabBar(selected: tab)
                 }
-                .transition(.opacity)
+                headerButton(
+                    drawer ? "layout-grid-filled" : "layout-grid",
+                    label: drawer ? "Back to \(tab.title)" : "All Apps", lit: drawer
+                ) {
+                    let show = !drawer
+                    if editor != nil { finishEditing() }
+                    showDrawer(show)
+                }
+                .background(GlassPlatter(shape: Circle()))
+                .padding(.leading, Self.appsGap)
+                Spacer(minLength: 0)
+                if editor != nil {
+                    DoneButton(action: finishEditing)
+                } else {
+                    HStack(spacing: 0) {
+                        headerButton(pinned ? "pin-filled" : "pin", label: pinned ? "Unpin" : "Pin", lit: pinned) {
+                            engine.send(.togglePin)
+                        }
+                        headerButton("settings", label: "Settings") { content.openSettings() }
+                    }
+                    .background(GlassPlatter(shape: Capsule()))
+                }
             }
+            .reportsFrame(to: editor, \.headerFrame)
+            if drawer {
+                AppDrawer(
+                    preferences: preferences, current: tab, editor: editor, open: openFromDrawer,
+                    edit: { editor == nil ? startEditing() : finishEditing() }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .reportsFrame(to: editor, \.gridFrame)
+                .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 1.04)))
+            } else {
+                content.tab(tab)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    // Overlay scroll bars would sit on top of charts and lists; faded edges show there's more.
+                    .scrollIndicators(.never)
+                    .id(tab)
+                    .transition(tabTransition)
+                    .animation(reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.74), value: tab)
+            }
+        }
+        .coordinateSpace(.named(TabEditor.space))
+        .overlay(alignment: .topLeading) {
+            if let editor { LiftedTab(editor: editor) }
         }
         .padding(contentPadding)
         .overlay(alignment: .bottomTrailing) {
@@ -370,17 +387,26 @@ struct NotchView: View {
         }
     }
 
-    /// Edit mode keeps the notch open, pinning it for the while, and shows the tab editor.
+    /// Edit mode keeps the notch open, pinning it for the while, and edits the tabs right in the
+    /// drawer, which opens first when editing starts from the tab row's menu.
     private func startEditing() {
         if !engine.state.presentation.isPinned {
             engine.send(.togglePin)
             pinnedToEdit = true
         }
-        withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.82)) { editing = true }
+        if !drawer {
+            drawerToEdit = true
+            showDrawer(true)
+        }
+        withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.82)) {
+            editor = TabEditor(preferences: preferences, room: tabRoom)
+        }
     }
 
     private func finishEditing() {
-        withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.82)) { editing = false }
+        withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.82)) { editor = nil }
+        if drawerToEdit { showDrawer(false) }
+        drawerToEdit = false
         if pinnedToEdit, engine.state.presentation.isPinned { engine.send(.togglePin) }
         pinnedToEdit = false
     }

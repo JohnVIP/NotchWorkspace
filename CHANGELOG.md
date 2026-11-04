@@ -15,6 +15,10 @@ as they land, written for the people who use the app
 
 - **Put your tasks in your own order.** Drag a task onto another in the same section to move it there; that section keeps your order, and new tasks join its end, as in Reminders. Sections you never rearrange stay soonest due first.
 
+### Changed
+
+- **Edit the tab row right in All Apps.** Edit no longer opens another screen: the tabs wiggle where they are, each with a minus to keep it in the drawer, the apps off the row get a plus, and Edit turns into Done.
+
 ### Fixed
 
 - **⌘V pastes in the notch.** Paste, copy, cut, select all, undo, and redo now work in every text field, in the notch and in Settings.
