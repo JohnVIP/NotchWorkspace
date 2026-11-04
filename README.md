@@ -19,7 +19,7 @@ https://github.com/user-attachments/assets/9d0c486c-5169-4297-b8b9-8fedbb9eadda
 </p>
 
 An **original, open-source** macOS menu-notch utility — turns the notch on Apple
-Silicon MacBooks into an interactive tray for media and sound, files, your
+Silicon MacBooks into an interactive tray for media, files, your
 calendar, tasks, notes, shortcuts, timers, network speed, camera, and coding agent status.
 Built with SwiftUI and AppKit.
 
@@ -45,8 +45,7 @@ Applications, and open it. It updates itself from then on. See
 version in the [changelog](CHANGELOG.md).
 
 - **Homebrew:** `brew install --cask niyamvora/tap/ilovenotch`
-- **Mac App Store:** in review. The App Store edition has everything except AI
-  Usage, Agents, the Sound tab, and sharing with Android. Try it now through the
+- **Mac App Store:** in review. The App Store edition excludes Agents. Try it now through the
   [TestFlight beta](https://testflight.apple.com/join/6p3zqhCS).
 - **From source:** see [Build & run](#build--run).
 
@@ -77,17 +76,10 @@ public and buildable whatever happens to the project.
   floating pill if you'd rather.
 - **Media.** What's playing in any app, with artwork, controls, shuffle and
   repeat, a seek bar, and a waveform that moves with the music. Music's up next
-  and lyrics, Spotify's recently played, output and volume, swipe to skip, and
+  and lyrics, Spotify's recently played, swipe to skip, and
   the cover in the closed notch while it plays.
-- **Sound.** Every app playing sound on a fader of its own, with its icon, to
-  turn it down or mute it; your output's and microphone's volume; and a switch
-  between your speakers, headphones, AirPods and other Bluetooth devices,
-  AirPlay, and displays. [More below](#sound).
 - **Shelf.** Drop files on the notch to keep them at hand; drag them back out,
-  preview them with Quick Look, or send them with AirDrop. Android phones
-  share with it too, over Quick Share on your Wi-Fi: send shelf files to a
-  phone, and accept files and links from one right in the notch.
-  [More below](#android).
+  preview them with Quick Look, or send them with AirDrop.
 - **Clipboard.** Turn on a history of what you copy (text, links, images, and
   files), search it with ⌃⌥V from any app, and copy anything again, with
   favorites that stay. Passwords and anything marked private are skipped.
@@ -190,10 +182,8 @@ hover, clicks, drags, sleep/lock, display changes
 | `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`), and the tab row's editor (`TabEditor`) and app drawer (`AppDrawer`) |
 | `NotchFeatures` | Feature modules (Media, Shelf, Clipboard, Calendar, Tasks, Notes, Shortcuts, Timer, Network, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors and hooks (volume, battery, accessories, volume keys, keyboard shortcuts, Show in Notch) |
 | `NotchAgents` | The GitHub build’s Claude Code and Codex status and hooks |
-| `NotchTransfer` | The GitHub build's Android sharing: Quick Share on Apple's own frameworks (Bonjour, CryptoKit, Network.framework) in `NotchTransfer/QuickShare`, with the shelf's request card, the send window, and settings |
-| `NotchMixer` | The GitHub build's Sound tab: output and input devices and their volume, and per-app volume on Core Audio process taps (macOS 14.2+), with a private aggregate device for each app turned down while it plays |
 | `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
-| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features, the mixer, network counters and history), offscreen snapshot tests, XCTest performance tests |
+| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features, network counters and history), offscreen snapshot tests, XCTest performance tests |
 
 The full design is in the [implementation plan](docs/plan/implementation-plan.md)
 and the [architecture diagram](docs/plan/architecture.html).
@@ -260,27 +250,6 @@ audio output only while Media is open and playing, so macOS asks once for
 permission to capture system audio. Nothing is recorded; see
 [PRIVACY.md](PRIVACY.md). Turn it off in **Settings › Media**.
 
-## Sound
-
-The Sound tab (GitHub build) is a small mixing desk. On its left are the Mac's
-outputs, or with the switch above them its inputs: speakers, wired headphones,
-AirPods and other Bluetooth devices while they're connected, AirPlay, and
-displays. Click one to send sound there or record from it, as in Control Center.
-On its right are faders: your output's volume, your microphone's in orange,
-then one for each app playing sound, with its icon and a dot while it plays.
-Drag a fader to turn that app down, click its icon to mute it, and bring it back
-to 100% to leave it alone. Chrome and Safari count as one app however many
-helper processes they play from. Each app keeps its volume until you change it,
-including after a relaunch; **Reset All** in Settings › Sound undoes
-them all. The volume keys' level in the closed notch opens the tab when you
-hover it.
-
-Per-app volume uses macOS 14.2's Core Audio process taps, the permission the
-waveform already asks for, and no audio driver. An app you turn down plays
-through ILoveNotch only while it plays, so its sound gains about 10 ms on the
-way to your speakers, and a muted app is silenced at its source with no audio
-work at all. With every app at 100% and the tab closed, nothing listens.
-
 ## Network
 
 The Network tab is [NetSpeed](https://github.com/niyamvora/NetSpeed), a menu
@@ -346,60 +315,6 @@ A message shows for 1 to 30 seconds (4 by default) and is never stored. It's
 only ever displayed: links in it aren't opened, line breaks and control
 characters are removed, and it's cut to 80 characters. Both editions have it,
 the App Store one too.
-
-## Android
-
-The shelf shares with Android phones over Quick Share, Android's own AirDrop,
-on your Wi-Fi. Nothing gets installed on the phone, and nothing goes through
-the internet or a server.
-
-- **From a phone.** On the phone, tap **Share › Quick Share** and pick your
-  Mac. The notch opens on the shelf with the phone's name, what it's sending,
-  and a 4-digit code that matches the phone's. Nothing is saved until you
-  **Accept**. Files go to Downloads (or a folder you choose), each one only once
-  it has arrived whole, and onto the shelf. A link or text goes to the
-  clipboard, and a web link gets **Open**.
-- **To a phone.** Right-click a shelf file and choose **Send to Android…**, or
-  click **Send to Android** under the shelf. A window like AirDrop's lists the
-  phones nearby; pick one and accept on the phone. If the phone isn't listed,
-  scan the window's QR code with its camera: Quick Share opens and the files go
-  straight to it.
-
-Phones can't see your Mac until you say so. **Receive from Android** under the
-shelf makes it visible for 10 minutes, and **Settings › Shelf** has
-**Off** (the default), **While the notch is open** (and for a minute after), or
-**Always**, along with the name phones see and where files go. While the Mac is
-asleep or locked, it's never visible. macOS asks once for Local Network access.
-
-Good to know:
-
-- **Same Wi-Fi only.** Guest, hotel, and office networks that keep devices
-  apart block it, and the speed is your router's.
-- **Phones that don't show up in the list.** Most phones announce themselves on
-  Wi-Fi only after a Bluetooth signal a Mac can't send, and Samsung's never do
-  without it. The QR code works for all of them. Other phones show up while
-  Quick Share's receive screen is open and set to **Everyone**.
-- **Everyone, not Contacts.** Contacts-only sharing needs a Google account, so
-  your Mac appears to anyone nearby while it's visible, and asks you first
-  every time.
-- **Unofficial.** Quick Share isn't an API Google offers for the Mac, so an
-  Android update could change it; the code lives in one module
-  (`NotchTransfer/QuickShare`) to fix quickly. It's in the GitHub build for
-  now.
-
-If the phone doesn't see your Mac, check **Visible** shows under the shelf, that
-both are on the same Wi-Fi, and that ILoveNotch is on in **System Settings ›
-Privacy & Security › Local Network** (and allowed through the firewall, if it
-asked). To see what happens during a transfer:
-
-```bash
-log stream --level debug --predicate 'subsystem == "cafe.opennotch.app" && category == "transfer"'
-```
-
-ILoveNotch's own implementation follows the message definitions in Google's
-open-source Quick Share code ([google/nearby](https://github.com/google/nearby),
-Apache-2.0) and the protocol notes of
-[NearDrop](https://github.com/grishka/NearDrop).
 
 ## Tasks and notes
 

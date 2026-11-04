@@ -3,8 +3,7 @@
 ILoveNotch is local-first.
 
 - No accounts, analytics, telemetry, or device fingerprinting.
-- The app uses the network to check for updates against GitHub Releases and to
-  share with Android phones over your local network when you use Quick Share.
+- The app uses the network to check for updates against GitHub Releases.
 - Everything ILoveNotch creates (settings, notes, shelf items) stays on your Mac,
   unless you choose a notes folder that syncs, such as one in iCloud Drive.
 - System permissions (Calendar, Reminders, Camera, and so on) are requested only
@@ -42,13 +41,6 @@ ILoveNotch is local-first.
   Security › Automation), the first time you press one of those buttons, and
   ILoveNotch only ever talks to the app that's playing. Spotify's recently
   played list is kept in memory and gone when ILoveNotch quits.
-- An app you turn down in the Sound tab (GitHub build) plays through
-  ILoveNotch at its new volume while it plays, on the same permission; one you
-  mute is silenced at its source. Its sound goes straight back out to your
-  speakers or headphones and is never recorded, stored, or sent. Apps you leave
-  at 100% aren't touched. **Reset All** in Settings › Sound hands
-  every app back its own volume. Switching devices and setting the output's or
-  microphone's volume there hear nothing at all.
 
 ## Agent status
 
@@ -63,32 +55,6 @@ session's state, its project folder, the app it runs in, its process ID, and
 the tool's own words for what it's waiting for. Your prompts, code, and tool
 output are never written, and nothing leaves your Mac. Disconnecting removes the
 hooks, and with no tool connected, the script and the session files too.
-
-## Sharing with Android
-
-Sharing with Android phones (Quick Share, in the shelf) uses your local network
-only: phone and Mac talk directly over your Wi-Fi, never through the internet
-or a server, and every connection is end-to-end encrypted.
-
-- **Visible only when you choose.** Receiving is off until you turn it on: for
-  10 minutes from the shelf, while the notch is open, or always. While it's on,
-  your Mac announces itself to devices on the same network with the name you
-  set in **Settings › Shelf** (your Mac's name unless you change it)
-  and a random ID that changes each launch. Asleep or locked, it announces
-  nothing.
-- **Nothing without your consent.** A phone that connects shows its name, what
-  it's sending, and a code matching its own, and nothing is saved until you
-  accept. Files go to the folder you choose (Downloads unless you change it),
-  marked as downloaded, as AirDrop marks files, so macOS checks any app or
-  script among them before it runs. Text and links go to the clipboard; a link
-  opens only when you click **Open**.
-- **Looking for phones only while you send.** The send window looks for phones
-  nearby while it's open and stops when it closes. Its QR code holds a key made
-  for that window alone.
-
-ILoveNotch keeps nothing about the phones it meets. macOS asks once for Local
-Network access; turning it off in **System Settings › Privacy & Security ›
-Local Network** turns this feature off and nothing else.
 
 A change that weakens any of these points must say so in its pull request and
 update this file.

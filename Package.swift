@@ -13,8 +13,6 @@ let package = Package(
         .library(name: "NotchSurface", targets: ["NotchSurface"]),
         .library(name: "NotchFeatures", targets: ["NotchFeatures"]),
         .library(name: "NotchAgents", targets: ["NotchAgents"]),
-        .library(name: "NotchTransfer", targets: ["NotchTransfer"]),
-        .library(name: "NotchMixer", targets: ["NotchMixer"]),
     ],
     targets: [
         // State machine, feature lifecycle, diagnostics. No AppKit, so it tests anywhere.
@@ -28,18 +26,10 @@ let package = Package(
         .target(name: "NotchFeatures", dependencies: ["NotchCore"], swiftSettings: strict),
         // Claude Code and Codex session status in the GitHub build.
         .target(name: "NotchAgents", dependencies: ["NotchCore", "NotchFeatures"], swiftSettings: strict),
-        // The GitHub build's Android sharing: Quick Share over the local network, on Apple's own
-        // frameworks only (docs/filesharing.md).
-        .target(name: "NotchTransfer", dependencies: ["NotchCore", "NotchFeatures"], swiftSettings: strict),
-        // The GitHub build's per-app volume, in the Media tab: Core Audio process taps, and a private
-        // call that tells which app a helper process (Safari's WebKit, say) plays for.
-        .target(name: "NotchMixer", dependencies: ["NotchCore", "NotchFeatures"], swiftSettings: strict),
         .testTarget(name: "NotchCoreTests", dependencies: ["NotchCore"], swiftSettings: strict),
         .testTarget(name: "NotchSurfaceTests", dependencies: ["NotchSurface"], swiftSettings: strict),
         .testTarget(name: "NotchFeaturesTests", dependencies: ["NotchFeatures"], swiftSettings: strict),
         .testTarget(name: "NotchAgentsTests", dependencies: ["NotchAgents"], swiftSettings: strict),
-        .testTarget(name: "NotchTransferTests", dependencies: ["NotchTransfer"], swiftSettings: strict),
-        .testTarget(name: "NotchMixerTests", dependencies: ["NotchMixer"], swiftSettings: strict),
         // XCTest metrics (clock, CPU, memory, signposts) for the core's hot paths.
         .testTarget(name: "PerformanceTests", dependencies: ["NotchCore"], swiftSettings: strict),
     ]

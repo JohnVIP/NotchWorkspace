@@ -20,7 +20,7 @@ struct MediaView: View {
     @State private var panel: Panel?
 
     enum Panel: Hashable {
-        case list, lyrics, output
+        case list, lyrics
     }
 
     private var tint: Color { media.accent?.color ?? .white }
@@ -49,7 +49,6 @@ struct MediaView: View {
         switch panel {
         case .list: media.scriptedPlayer != nil ? .list : nil
         case .lyrics: media.lyrics != nil ? .lyrics : nil
-        case .output: media.outputControl != nil ? .output : nil
         case nil: nil
         }
     }
@@ -193,11 +192,6 @@ struct MediaView: View {
             smallButton("quote.bubble", size: 11.5) { show(.lyrics) }
                 .help("Lyrics")
                 .accessibilityLabel("Lyrics")
-        }
-        if media.outputControl != nil {
-            smallButton("airplayaudio", size: 11.5) { show(.output) }
-                .help("Output and volume")
-                .accessibilityLabel("Output and volume")
         }
     }
 
@@ -375,7 +369,6 @@ struct MediaView: View {
                 switch panel {
                 case .list: list
                 case .lyrics: lyricsText
-                case .output: media.outputControl?(now.appBundleID)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -391,7 +384,6 @@ struct MediaView: View {
             // Shuffled, Music still lists the playlist in its own order, not the order it plays in.
             return media.shuffle == true ? "From \(playlist)" : "Up Next from \(playlist)"
         case .lyrics: return "Lyrics"
-        case .output: return "Output"
         }
     }
 

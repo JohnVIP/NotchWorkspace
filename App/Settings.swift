@@ -143,7 +143,6 @@ extension SettingsSelection.Page {
         case .feature(let feature):
             switch feature {
             case .media: ("play", .pink)
-            case .sound: (feature.symbol, .red)
             case .shelf: (feature.symbol, .blue)
             case .clipboard: (feature.symbol, .teal)
             case .calendar: (feature.symbol, .red)
@@ -169,7 +168,6 @@ extension SettingsSelection.Page {
         case .feature(let feature):
             switch feature {
             case .media: "What's playing in any app, with artwork, controls, and a waveform."
-            case .sound: "Your speakers and microphone, and every app's volume on its own fader."
             case .shelf: "Files you drop on the notch, at hand to drag out, preview, or share."
             case .clipboard: "A searchable history of what you copy, with favorites that stay."
             case .calendar: "Today's events, with a Join button and a countdown for calls."

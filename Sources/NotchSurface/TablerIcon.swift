@@ -45,7 +45,6 @@ extension FeatureID {
     var icon: String {
         switch self {
         case .media: "music"
-        case .sound: "volume"
         case .shelf: "inbox"
         case .clipboard: "clipboard-list"
         case .calendar: "calendar"

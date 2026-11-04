@@ -57,7 +57,7 @@ struct NotchPreferencesTests {
         preferences.setEnabled(.shelf, false)
         preferences.place(.notes, at: 1)
         #expect(preferences.tabs.prefix(3) == [.timer, .notes, .media])
-        #expect(preferences.tabOrder.prefix(5) == [.timer, .notes, .media, .sound, .shelf], "the hidden shelf stayed")
+        #expect(preferences.tabOrder.prefix(4) == [.timer, .notes, .media, .shelf], "the hidden shelf stayed")
         preferences.place(.shelf, at: preferences.tabs.count)
         #expect(preferences.tabs.last == .shelf && preferences.isEnabled(.shelf), "placing a hidden tab shows it")
         #expect(NotchPreferences(defaults: defaults).tabs == preferences.tabs, "and the order persists")
@@ -77,7 +77,7 @@ struct NotchPreferencesTests {
     }
 
     @Test func aFeatureAddedByAnUpdateJoinsTheEndOfACustomOrder() {
-        defaults.set(["timer", "usage", "media", "a-feature-from-the-future", "timer"], forKey: "tabOrder")
+        defaults.set(["timer", "usage", "media", "sound", "a-feature-from-the-future", "timer"], forKey: "tabOrder")
         let order = NotchPreferences(defaults: defaults).tabOrder
         #expect(order.prefix(2) == [.timer, .media])
         #expect(Array(order.dropFirst(2)) == FeatureID.allCases.filter { $0 != .timer && $0 != .media })

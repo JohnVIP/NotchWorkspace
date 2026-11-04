@@ -7,23 +7,16 @@ import SwiftUI
 
 #if !APP_STORE
     import NotchAgents
-    import NotchMixer
-    import NotchTransfer
 #endif
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     #if APP_STORE
-        // The App Sandbox can't add hooks to other tools' settings, so the App Store edition has no
-        // Agents. Android sharing and per-app volume also ship in the GitHub build only.
-        private let preferences = NotchPreferences(unavailable: [.agents, .sound])
+        // The App Sandbox prevents Agents from adding hooks to other tools' settings.
+        private let preferences = NotchPreferences(unavailable: [.agents])
     #else
         private let preferences = NotchPreferences()
         private let agents = AgentsFeature()
-        /// Quick Share with Android phones, part of the shelf.
-        private let transfer = TransferFeature()
-        /// The Sound tab: devices, and every app's volume.
-        private let mixer = Mixer()
     #endif
     private let media = MediaFeature()
     private let shelf = ShelfFeature()
@@ -80,18 +73,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func tabView(for feature: FeatureID) -> AnyView {
         switch feature {
         case .media: return AnyView(media.view)
-        case .sound:
-            #if APP_STORE
-                return AnyView(EmptyView())
-            #else
-                return AnyView(SoundView(mixer: mixer))
-            #endif
-        case .shelf:
-            #if APP_STORE
-                return AnyView(shelf.view)
-            #else
-                return AnyView(transfer.shelfView(AnyView(shelf.view)))
-            #endif
+        case .shelf: return AnyView(shelf.view)
         case .clipboard: return AnyView(clipboard.view)
         case .calendar: return AnyView(calendar.view)
         case .tasks: return AnyView(tasks.view)
@@ -113,22 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func settingsView(for feature: FeatureID) -> AnyView? {
         switch feature {
         case .media: return section(media.settingsView)
-        case .sound:
-            #if APP_STORE
-                return nil
-            #else
-                return section(mixer.settingsView)
-            #endif
-        case .shelf:
-            #if APP_STORE
-                return section(shelf.settingsView)
-            #else
-                return AnyView(
-                    Group {
-                        Section { shelf.settingsView }
-                        Section("Android") { transfer.settingsView }
-                    })
-            #endif
+        case .shelf: return section(shelf.settingsView)
         case .clipboard: return section(clipboard.settingsView)
         case .calendar: return section(calendar.settingsView)
         case .tasks: return section(tasks.settingsView)
@@ -156,9 +123,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         coordinator.onPresentationsChange = { [weak self] presentations in
             guard let self else { return }
             features.update(presentations: presentations, enabled: Set(preferences.tabs))
-            #if !APP_STORE
-                transfer.notchChanged(presentations, shelfEnabled: preferences.isEnabled(.shelf))
-            #endif
             if !presentations.contains(where: { $0.openTab != nil }) { escapeKey.shortcut = nil }
         }
         notchKey.onPress = { [weak self, weak coordinator] in
@@ -191,19 +155,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #if !APP_STORE
             agents.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
             agents.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .agents) }
-            shelf.sendToAndroid = { [transfer] in transfer.send($0) }
-            shelf.androidControl = AnyView(transfer.receiveControl)
-            transfer.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
-            transfer.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .shelf) }
-            transfer.onReceived = { [shelf] in shelf.add($0) }
-            // A phone asking to send opens the notch on the shelf, where its request is.
-            transfer.onRequest = { [weak coordinator] in coordinator?.open(.shelf) }
-            // Hovering the volume in the closed notch opens the Sound tab, where everything else is.
-            volume.onActivity = { [weak coordinator, preferences] activity in
-                var activity = activity
-                if preferences.isEnabled(.sound) { activity.feature = .sound }
-                coordinator?.broadcast(.activity(activity))
-            }
         #endif
         volumeKeys.onKey = { [volume] key, fine in
             switch key {
@@ -258,10 +209,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         // Stops every feature, including the media helper process and the camera.
         features.update(presentations: [], enabled: [])
-        #if !APP_STORE
-            transfer.stop()
-            mixer.isEnabled = false  // every app back to its own volume
-        #endif
         timer.allowSleep()
         volume.stop()
         battery.stop()
@@ -290,13 +237,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !preferences.isEnabled(.timer) { timer.allowSleep() }
         // What moves while the Network tab is off isn't counted when it comes back.
         network.isEnabled = preferences.isEnabled(.network)
-        #if !APP_STORE
-            // Apps keep the volumes set in the Sound tab only while it's on, and Media borrows its
-            // outputs and faders for the app that's playing.
-            mixer.isEnabled = preferences.isEnabled(.sound)
-            media.outputControl =
-                preferences.isEnabled(.sound) ? { [mixer] in AnyView(MediaOutputView(mixer: mixer, appID: $0)) } : nil
-        #endif
         preferences.showsVolume ? volume.start() : volume.stop()
         preferences.showsBattery ? battery.start() : battery.stop()
         preferences.showsAccessoryBattery ? accessories.start() : accessories.stop()

@@ -71,9 +71,6 @@ public final class MediaFeature: NotchFeature {
     public private(set) var queue: PlayerQueue?
     /// Lyrics saved with the track in Music.
     public private(set) var lyrics: String?
-    /// The app's output picker (the Sound tab's devices and volumes) for the app playing, by bundle
-    /// identifier; nil where there's none.
-    public var outputControl: ((String?) -> AnyView)?
     /// Raised when the track changes while the notch shows something else.
     @ObservationIgnored public var onActivity: ((Activity) -> Void)?
     /// Keeps what's playing beside the closed notch; nil clears it.
