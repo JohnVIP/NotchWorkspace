@@ -155,6 +155,25 @@ struct EventKitFeatureTests {
         #expect(Set(tasks.sections(now: now).map(\.title)) == ["Work", "Home"])
     }
 
+    @Test func draggedTasksKeepTheirPlaceInTheirSection() {
+        let tasks = TasksFeature(eventStore: EventStore(), defaults: defaults)
+        let late = TaskItem(id: "l", title: "late", due: .now - 86_400 * 2)
+        let a = TaskItem(id: "a", title: "Alpha")
+        let b = TaskItem(id: "b", title: "Bravo")
+        let c = TaskItem(id: "c", title: "Charlie")
+        tasks.show(tasks: [late, a, b, c], completed: [])
+        func undated() -> [String] { tasks.sections().last?.tasks.map(\.id) ?? [] }
+        tasks.move(c, to: a)
+        #expect(undated() == ["c", "a", "b"], "dragged up: lands where the target was")
+        tasks.move(c, to: b)
+        #expect(undated() == ["a", "b", "c"], "dragged down: lands after the target")
+        tasks.move(late, to: a)
+        #expect(tasks.sections().first?.tasks.map(\.id) == ["l"], "another section's task stays put")
+        tasks.show(tasks: [late, TaskItem(id: "d", title: "Aardvark"), a, b, c], completed: [])
+        #expect(undated() == ["a", "b", "c", "d"], "a new task joins the end, as in Reminders")
+        #expect(TasksFeature(eventStore: EventStore(), defaults: defaults).manualOrder == ["a", "b", "c"])
+    }
+
     @Test func prioritiesMapToRemindersValues() {
         for priority in TaskPriority.allCases {
             #expect(TaskPriority(eventKit: priority.eventKitValue) == priority)

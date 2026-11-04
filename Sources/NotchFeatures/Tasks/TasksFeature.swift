@@ -181,6 +181,12 @@ public final class TasksFeature: NotchFeature {
     public var groupsByList: Bool {
         didSet { defaults.set(groupsByList, forKey: Self.groupsByListKey) }
     }
+    /// Tasks dragged into place, by ID: a section shows these first, in this order, then the rest
+    /// soonest due first. Reminders keeps its own manual order where EventKit can't read it, so this
+    /// one stays on this Mac.
+    public private(set) var manualOrder: [String] {
+        didSet { defaults.set(manualOrder, forKey: Self.manualOrderKey) }
+    }
     /// Show a task on the notch when its due time arrives.
     public var alertsInNotch: Bool {
         didSet {
@@ -206,6 +212,7 @@ public final class TasksFeature: NotchFeature {
     private static let listKey = "tasks.listID"
     private static let showsCompletedKey = "tasks.showsCompleted"
     private static let groupsByListKey = "tasks.groupsByList"
+    private static let manualOrderKey = "tasks.manualOrder"
     private static let alertsInNotchKey = "tasks.alertsInNotch"
     private static let alertsAtDueTimeKey = "tasks.alertsAtDueTime"
     private static let blockMinutesKey = "tasks.blockMinutes"
@@ -221,6 +228,7 @@ public final class TasksFeature: NotchFeature {
         listID = defaults.string(forKey: Self.listKey)
         showsCompleted = defaults.bool(forKey: Self.showsCompletedKey)
         groupsByList = defaults.bool(forKey: Self.groupsByListKey)
+        manualOrder = defaults.stringArray(forKey: Self.manualOrderKey) ?? []
         alertsInNotch = defaults.object(forKey: Self.alertsInNotchKey) as? Bool ?? true
         alertsAtDueTime = defaults.object(forKey: Self.alertsAtDueTimeKey) as? Bool ?? true
         let minutes = defaults.integer(forKey: Self.blockMinutesKey)
@@ -232,8 +240,12 @@ public final class TasksFeature: NotchFeature {
     /// Whether the feature is listening for reminder changes.
     var isObserving: Bool { changes != nil }
 
-    /// Open tasks under headings: by date (Overdue, Today, Tomorrow, …) or by list.
+    /// Open tasks under headings: by date (Overdue, Today, Tomorrow, …) or by list. Each keeps the
+    /// order tasks were dragged into, if any.
     public func sections(now: Date = .now) -> [TaskSection] {
+        let rank = Dictionary(manualOrder.enumerated().map { ($1, $0) }, uniquingKeysWith: min)
+        // The sort is stable, so tasks never dragged keep their date order after the ones that were.
+        let tasks = self.tasks.sorted { rank[$0.id, default: .max] < rank[$1.id, default: .max] }
         if groupsByList {
             let byList = Dictionary(grouping: tasks) { $0.listID ?? $0.listTitle ?? "" }
             let known = lists.map(\.id).filter { byList[$0] != nil }
@@ -252,6 +264,20 @@ public final class TasksFeature: NotchFeature {
             return TaskSection(
                 id: "group-\(group.rawValue)", title: group.title, isOverdue: group == .overdue, tasks: items)
         }
+    }
+
+    /// Puts a task where `target` is in their section, as a drag drops it there. The section keeps
+    /// that order from then on, and a task added later joins at its end, as in Reminders. Tasks in
+    /// different sections stay put.
+    public func move(_ task: TaskItem, to target: TaskItem, now: Date = .now) {
+        guard
+            var order = sections(now: now).first(where: { $0.tasks.contains { $0.id == target.id } })?.tasks.map(\.id),
+            let from = order.firstIndex(of: task.id), let to = order.firstIndex(of: target.id), from != to
+        else { return }
+        order.move(fromOffsets: [from], toOffset: to > from ? to + 1 : to)
+        let placed = Set(order)
+        let open = Set(tasks.map(\.id))
+        manualOrder = manualOrder.filter { open.contains($0) && !placed.contains($0) } + order
     }
 
     public func requestAccess() {

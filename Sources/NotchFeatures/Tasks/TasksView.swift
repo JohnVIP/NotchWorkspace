@@ -3,13 +3,16 @@ import SwiftUI
 
 /// The tasks tab: open reminders under date or list headings, a collapsible section of recently
 /// completed ones, and a quick-add field that reads dates, priorities, and lists as you type.
-/// Hovering a task shows its actions; double-clicking its title renames it. Typing in a field gives
-/// the notch keyboard focus.
+/// Hovering a task shows its actions; double-clicking its title renames it; dragging it onto another
+/// in its section moves it there. Typing in a field gives the notch keyboard focus.
 struct TasksView: View {
     let tasks: TasksFeature
     @State private var draft = ""
     /// Tasks just ticked: they show a checkmark for a beat before moving to Completed.
     @State private var ticking: Set<TaskItem.ID> = []
+    /// The task being dragged to a new place, and the one it's over.
+    @State private var dragging: TaskItem?
+    @State private var dropTarget: TaskItem.ID?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -36,7 +39,28 @@ struct TasksView: View {
                                 TaskRow(
                                     tasks: tasks, task: task, ticked: ticking.contains(task.id),
                                     showsList: !tasks.groupsByList && tasks.listID == nil && tasks.lists.count > 1,
-                                    tick: { tick(task) })
+                                    tick: { tick(task) }
+                                )
+                                .overlay(alignment: draggedFromAbove(task, in: section) ? .bottom : .top) {
+                                    if dropTarget == task.id {
+                                        Capsule().fill(Color.accentColor).frame(height: 2).padding(.horizontal, 4)
+                                    }
+                                }
+                                .onDrag {
+                                    dragging = task
+                                    return NSItemProvider(object: task.title as NSString)
+                                }
+                                .dropDestination(for: String.self) { items, _ in
+                                    drop(items.first, on: task, in: section)
+                                } isTargeted: { over in
+                                    if over, section.tasks.contains(where: { $0.id == dragging?.id }) {
+                                        dropTarget = task.id
+                                    } else if dropTarget == task.id {
+                                        dropTarget = nil
+                                    }
+                                }
+                                .accessibilityAction(named: "Move Up") { step(task, by: -1, in: section) }
+                                .accessibilityAction(named: "Move Down") { step(task, by: 1, in: section) }
                             }
                         }
                         if !tasks.completed.isEmpty { completedSection }
@@ -227,6 +251,42 @@ struct TasksView: View {
             Button("Delete", role: .destructive) { tasks.delete(task) }
         }
         .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+
+    // MARK: Reordering
+
+    /// The dragged task comes from above `task`, so it would land below it.
+    private func draggedFromAbove(_ task: TaskItem, in section: TaskSection) -> Bool {
+        let ids = section.tasks.map(\.id)
+        guard let from = dragging.flatMap({ ids.firstIndex(of: $0.id) }) else { return false }
+        return from < (ids.firstIndex(of: task.id) ?? 0)
+    }
+
+    /// Drops the dragged task where `target` is. The text must be the dragged task's title, so a drag
+    /// that ended somewhere else can't move it on a later drop.
+    private func drop(_ text: String?, on target: TaskItem, in section: TaskSection) -> Bool {
+        defer {
+            dragging = nil
+            dropTarget = nil
+        }
+        guard let moving = dragging, text == moving.title, section.tasks.contains(where: { $0.id == moving.id })
+        else { return false }
+        reorder(moving, to: target)
+        return true
+    }
+
+    /// One place up or down, for VoiceOver.
+    private func step(_ task: TaskItem, by offset: Int, in section: TaskSection) {
+        guard let index = section.tasks.firstIndex(where: { $0.id == task.id }),
+            section.tasks.indices.contains(index + offset)
+        else { return }
+        reorder(task, to: section.tasks[index + offset])
+    }
+
+    private func reorder(_ task: TaskItem, to target: TaskItem) {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.85)) {
+            tasks.move(task, to: target)
+        }
     }
 
     /// Shows the checkmark for a beat, then moves the task to Completed.

@@ -11,6 +11,10 @@ as they land, written for the people who use the app
 
 ## [Unreleased]
 
+### Added
+
+- **Put your tasks in your own order.** Drag a task onto another in the same section to move it there; that section keeps your order, and new tasks join its end, as in Reminders. Sections you never rearrange stay soonest due first.
+
 ### Fixed
 
 - **⌘V pastes in the notch.** Paste, copy, cut, select all, undo, and redo now work in every text field, in the notch and in Settings.
