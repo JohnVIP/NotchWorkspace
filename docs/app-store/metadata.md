@@ -1,13 +1,24 @@
 # App Store listing
 
-**Status: 1.3.0 live** at US$1.99 since 7 October 2026 (<https://apps.apple.com/app/id6815805975>);
-**1.4.0 (build 157) in review** since 11 October. History: 1.0.0 was submitted on 24 September and
+**Status: 1.4.0 (build 157) live** at US$1.99 (<https://apps.apple.com/app/id6815805975>);
+**1.5.0 (build 163) in review** since 4 November 2026, released automatically once approved, and in
+TestFlight's Public group awaiting Beta App Review. History: 1.0.0 was submitted on 24 September and
 rejected on 29 September for the Sponsor link (guideline 3.1.1: no payments outside In-App
 Purchase) and for "Allow Access" buttons before permission prompts (5.1.1(iv): say Continue); the
-same version, renamed 1.3.0 (build 150) with both fixed, was resubmitted on 2 October. 1.4.0 was
-first submitted with build 156, then pulled and resubmitted with 157 for the Spotify Automation fix
-(f57875a). Change the listing here and in App Store Connect together. Character limits are App
-Store Connect's.
+same version, renamed 1.3.0 (build 150) with both fixed, was resubmitted on 2 October and went live
+on 7 October. 1.4.0 was first submitted with build 156, then pulled and resubmitted with 157 for
+the Spotify Automation fix (f57875a). Change the listing here and in App Store Connect together.
+Character limits are App Store Connect's.
+
+## What's New in 1.5.0
+
+Made from your feedback.
+
+- Edit the tab row right in All Apps: the tabs wiggle where they are, tap − to keep one in the
+  drawer or + to add one, and Edit turns into Done.
+- Put your tasks in your own order: drag a task onto another in the same section to move it there.
+  New tasks join the end, as in Reminders.
+- ⌘V pastes in the notch, and copy, cut, select all, undo, and redo work in every text field.
 
 The App Store edition is sandboxed: it has every tab except Sound, AI Usage, and Agents, and no
 Quick Share. Media shows what's playing in Music and Spotify from their public notifications and,
@@ -137,6 +148,11 @@ system audio recording permission and analyzes the sound on the Mac without reco
 playback, shuffle, and repeat buttons control Music and Spotify through the scripting access groups
 they publish (`com.apple.security.scripting-targets`); macOS asks for Automation permission the
 first time one is pressed. No account or sign-in is needed, and the app makes no network requests.
+
+New in 1.5.0: open the notch, click the grid button after the tabs (All Apps), and click Edit: the
+tabs wiggle in place; click − on a tab to keep it in the drawer, + on an app to add it to the row,
+or drag them, then click Done. In the Tasks tab, drag a task onto another in the same section to
+reorder it. Command-V now pastes in the notch's text fields, such as the new task field.
 
 To try Media's controls (new in 1.4.0): play a song in Music or Spotify, open the notch on the
 Media tab, and press play/pause, next, shuffle, or repeat. macOS asks once for Automation permission
