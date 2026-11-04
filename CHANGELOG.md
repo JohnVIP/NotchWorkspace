@@ -11,6 +11,10 @@ as they land, written for the people who use the app
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-04
+
+ILoveNotch 1.5 comes from your feedback: edit the tab row right in All Apps, put your tasks in your own order, and paste with ⌘V.
+
 ### Added
 
 - **Put your tasks in your own order.** Drag a task onto another in the same section to move it there; that section keeps your order, and new tasks join its end, as in Reminders. Sections you never rearrange stay soonest due first.
@@ -123,7 +127,8 @@ The first release of ILoveNotch: your MacBook's notch, finally useful.
 - **System activities.** Volume, charging and battery, and Bluetooth accessory batteries show briefly in the notch.
 - Signed and notarized by Apple, with updates through Sparkle, and on Homebrew: `brew install --cask niyamvora/tap/ilovenotch`.
 
-[Unreleased]: https://github.com/niyamvora/ILoveNotch/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/niyamvora/ILoveNotch/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/niyamvora/ILoveNotch/compare/v1.1.0...v1.2.0
