@@ -22,14 +22,15 @@ private let externalWithNotch = NotchMetrics(
     screen: CGRect(x: -2560, y: 180, width: 2560, height: 1440), safeAreaTop: 0, left: nil, right: nil,
     standIn: CGSize(width: 185, height: 24))
 
-private let song = Activity(feature: .media, symbol: "music.note", title: "Song", duration: .seconds(2))
+private let reminder = Activity(feature: .calendar, symbol: "bell.fill", title: "Standup", duration: .seconds(2))
 private let volume = Activity(
     feature: nil, symbol: "speaker.wave.2.fill", title: "50%", level: 0.5, duration: .seconds(1))
 
 struct NotchMetricsTests {
     static let displays = [macBookPro14, macBookPro16, external, externalWithNotch]
     static let presentations: [NotchPresentationState] = [
-        .compact, .hoverArmed, .transient(song), .transient(volume), .expanded(tab: .media), .pinned(tab: .notes),
+        .compact, .hoverArmed, .transient(reminder), .transient(volume), .expanded(tab: .calendar),
+        .pinned(tab: .notes),
         .focused(tab: .notes, pinned: false),
     ]
 
@@ -57,9 +58,9 @@ struct NotchMetricsTests {
     @Test(arguments: displays)
     func aLiveActivityKeepsItsSymbolAndTitleTogether(metrics: NotchMetrics) {
         let title = String(repeating: "A very long video title ", count: 4)
-        let short = metrics.size(for: .transient(song))
+        let short = metrics.size(for: .transient(reminder))
         let long = metrics.size(
-            for: .transient(Activity(feature: .media, symbol: "play.fill", title: title, duration: .zero)))
+            for: .transient(Activity(feature: .calendar, symbol: "play.fill", title: title, duration: .zero)))
         #expect(short == metrics.size(for: .transient(volume)), "a short title keeps to the notch, like a level")
         #expect(short.width < long.width, "a long one widens the row")
         #expect(long.width == metrics.housing.width + NotchMetrics.activityWing * 2, "up to a ceiling")
@@ -138,8 +139,8 @@ struct NotchMetricsTests {
     func statesGrowInTheRightOrder(metrics: NotchMetrics) {
         let compact = metrics.size(for: .compact)
         let hover = metrics.size(for: .hoverArmed)
-        let live = metrics.size(for: .transient(song))
-        let open = metrics.size(for: .expanded(tab: .media))
+        let live = metrics.size(for: .transient(reminder))
+        let open = metrics.size(for: .expanded(tab: .calendar))
         let housing = metrics.housing
         #expect(compact.width <= housing.width && compact.height <= housing.height)
         #expect(hover.width > housing.width && hover.height > housing.height, "hover shows past the housing")
@@ -176,7 +177,7 @@ struct NotchMetricsTests {
     @Test(arguments: displays)
     func everyResizeFitsInsideTheFixedPanel(metrics: NotchMetrics) {
         for chosen in [NotchPreferences.minimumExpandedSize, NotchPreferences.maximumExpandedSize] {
-            let size = metrics.size(for: .expanded(tab: .media), expanded: chosen)
+            let size = metrics.size(for: .expanded(tab: .calendar), expanded: chosen)
             let panel = metrics.panelFrame
             #expect(size.width <= panel.width && size.height + metrics.topInset <= panel.height)
         }
@@ -184,7 +185,7 @@ struct NotchMetricsTests {
 
     @Test func theChosenSizeIsUsedButLeavesRoomBesideTheNotch() {
         #expect(macBookPro14.size(for: .pinned(tab: .notes), expanded: CGSize(width: 600, height: 380)).width == 600)
-        let tiny = macBookPro14.size(for: .expanded(tab: .media), expanded: CGSize(width: 100, height: 300))
+        let tiny = macBookPro14.size(for: .expanded(tab: .calendar), expanded: CGSize(width: 100, height: 300))
         #expect(tiny.width == macBookPro14.housing.width + 80)
     }
 

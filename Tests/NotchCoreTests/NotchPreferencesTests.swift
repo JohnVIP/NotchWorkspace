@@ -9,45 +9,33 @@ import Testing
 struct NotchPreferencesTests {
     /// A throwaway defaults domain per test.
     private let defaults = UserDefaults(suiteName: "NotchPreferencesTests.\(UUID().uuidString)")!
-    /// Every tab except those that start off, like the camera mirror.
-    private let defaultTabs = FeatureID.allCases.filter { !NotchPreferences.offByDefault.contains($0) }
+    private let defaultTabs = FeatureID.allCases
 
-    @Test func everythingButTheMirrorIsEnabledOnOneDisplayByDefault() {
+    @Test func everyTabIsEnabledOnOneDisplayByDefault() {
         let preferences = NotchPreferences(defaults: defaults)
         #expect(preferences.tabs == defaultTabs)
-        #expect(!preferences.isEnabled(.mirror))
         #expect(!preferences.showOnAllDisplays)
         #expect(preferences.showsVolume && preferences.showsBattery)
-        #expect(!preferences.replacesVolumeDisplay && !preferences.showsAccessoryBattery)
+        #expect(!preferences.showsAccessoryBattery)
     }
 
     @Test func choicesPersistAcrossLaunches() {
         let first = NotchPreferences(defaults: defaults)
-        first.setEnabled(.media, false)
+        first.setEnabled(.calendar, false)
         first.showOnAllDisplays = true
         first.showsBattery = false
 
         let second = NotchPreferences(defaults: defaults)
-        #expect(!second.isEnabled(.media))
-        #expect(second.tabs == defaultTabs.filter { $0 != .media })
+        #expect(!second.isEnabled(.calendar))
+        #expect(second.tabs == defaultTabs.filter { $0 != .calendar })
         #expect(second.showOnAllDisplays)
         #expect(!second.showsBattery)
     }
 
-    @Test func aFeatureThatStartsOffDoesSoOnceThenFollowsTheUser() {
-        // An update from before the mirror existed: some choices stored, the mirror never seen.
-        defaults.set(["notes"], forKey: "disabledFeatures")
-        let updated = NotchPreferences(defaults: defaults)
-        #expect(!updated.isEnabled(.mirror) && !updated.isEnabled(.notes))
-
-        updated.setEnabled(.mirror, true)
-        #expect(NotchPreferences(defaults: defaults).isEnabled(.mirror), "turned on, it stays on")
-    }
-
     @Test func unknownStoredFeaturesAreIgnored() {
-        defaults.set(["notes", "a-feature-from-the-future"], forKey: "disabledFeatures")
+        defaults.set(["notes", "mirror", "clipboard", "a-feature-from-the-future"], forKey: "disabledFeatures")
         let disabled = NotchPreferences(defaults: defaults).disabledFeatures
-        #expect(disabled == [.notes, .mirror], "and the mirror starts off")
+        #expect(disabled == [.notes])
     }
 
     @Test func tabsMoveAndKeepTheirPlaceWhileHidden() {
@@ -56,8 +44,8 @@ struct NotchPreferencesTests {
         #expect(preferences.tabs.first == .timer)
         preferences.setEnabled(.shelf, false)
         preferences.place(.notes, at: 1)
-        #expect(preferences.tabs.prefix(3) == [.timer, .notes, .media])
-        #expect(preferences.tabOrder.prefix(4) == [.timer, .notes, .media, .shelf], "the hidden shelf stayed")
+        #expect(preferences.tabs.prefix(3) == [.timer, .notes, .calendar])
+        #expect(preferences.tabOrder.prefix(4) == [.timer, .notes, .calendar, .shelf], "the hidden shelf stayed")
         preferences.place(.shelf, at: preferences.tabs.count)
         #expect(preferences.tabs.last == .shelf && preferences.isEnabled(.shelf), "placing a hidden tab shows it")
         #expect(NotchPreferences(defaults: defaults).tabs == preferences.tabs, "and the order persists")
@@ -77,10 +65,10 @@ struct NotchPreferencesTests {
     }
 
     @Test func aFeatureAddedByAnUpdateJoinsTheEndOfACustomOrder() {
-        defaults.set(["timer", "usage", "media", "sound", "a-feature-from-the-future", "timer"], forKey: "tabOrder")
+        defaults.set(["timer", "usage", "media", "calendar", "network", "sound", "timer"], forKey: "tabOrder")
         let order = NotchPreferences(defaults: defaults).tabOrder
-        #expect(order.prefix(2) == [.timer, .media])
-        #expect(Array(order.dropFirst(2)) == FeatureID.allCases.filter { $0 != .timer && $0 != .media })
+        #expect(order.prefix(2) == [.timer, .calendar])
+        #expect(Array(order.dropFirst(2)) == FeatureID.allCases.filter { $0 != .timer && $0 != .calendar })
         #expect(!NotchPreferences(defaults: defaults, unavailable: [.agents]).tabOrder.contains(.agents))
     }
 
@@ -90,14 +78,11 @@ struct NotchPreferencesTests {
         preferences.setEnabled(.shelf, false)
         preferences.showOnAllDisplays = true
         preferences.resizeExpanded(to: CGSize(width: 600, height: 400))
-        preferences.setEnabled(.mirror, true)
-        preferences.replacesVolumeDisplay = true
         preferences.theme = .glass
         preferences.reset()
         #expect(preferences.tabs == defaultTabs)
         #expect(preferences.tabOrder == FeatureID.allCases)
         #expect(preferences.expandedSize == NotchPreferences.defaultExpandedSize)
-        #expect(!preferences.replacesVolumeDisplay)
         #expect(preferences.theme == .black)
         #expect(!NotchPreferences(defaults: defaults).showOnAllDisplays)
     }
@@ -130,7 +115,6 @@ struct NotchPreferencesTests {
 
     @Test func theNotchShortcutStartsAsControlOptionOAndCanBeChangedOrCleared() {
         #expect(NotchPreferences(defaults: defaults).notchShortcut?.display == "⌃⌥O")
-        #expect(NotchPreferences(defaults: defaults).clipboardShortcut?.display == "⌃⌥V")
         let command = KeyShortcut(keyCode: 49, modifiers: KeyShortcut.command | KeyShortcut.shift, key: "Space")
         NotchPreferences(defaults: defaults).notchShortcut = command
         #expect(NotchPreferences(defaults: defaults).notchShortcut == command)

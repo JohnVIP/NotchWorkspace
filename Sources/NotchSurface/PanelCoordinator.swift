@@ -73,22 +73,6 @@ public final class PanelCoordinator {
         return controller.engine.state.presentation.openTab != nil
     }
 
-    /// A tab's own shortcut: opens `tab` on the display under the pointer and gives it the keyboard,
-    /// or closes it when it's already open there. Returns whether it opened.
-    @discardableResult
-    public func toggle(_ tab: FeatureID) -> Bool {
-        // A disabled tab would open the first enabled one instead.
-        guard preferences.isEnabled(tab), let controller = controllerUnderPointer else { return false }
-        if controller.engine.state.presentation.openTab == tab {
-            dismissAll()
-            return false
-        }
-        controller.engine.send(.selectTab(tab))
-        guard controller.engine.state.presentation.openTab == tab else { return false }
-        controller.focusKeyboard()
-        return true
-    }
-
     private var controllerUnderPointer: NotchController? {
         let pointer = NSEvent.mouseLocation
         return controllers.first { $0.screenFrame.contains(pointer) } ?? controllers.first
@@ -103,17 +87,13 @@ public final class PanelCoordinator {
 
     /// Shows `activity` on every resting notch until `feature` replaces it, or clears it with nil.
     /// With several at once the newest shows, and the others wait underneath until it clears. An
-    /// update keeps its place, so a speed ticking every second can't cover a meeting's countdown, and
-    /// the least urgent, the network's speed and what's playing, start out underneath the rest.
+    /// update keeps its place.
     public func setOngoing(_ activity: Activity?, for feature: FeatureID) {
         if let activity, let index = ongoing.firstIndex(where: { $0.feature == feature }) {
             ongoing[index].activity = activity
         } else {
             ongoing.removeAll { $0.feature == feature }
-            let underneath: Set<FeatureID> = [.network, .media]
-            if let activity {
-                ongoing.insert((feature, activity), at: underneath.contains(feature) ? 0 : ongoing.count)
-            }
+            if let activity { ongoing.append((feature, activity)) }
         }
         broadcast(.setOngoing(shownOngoing))
     }

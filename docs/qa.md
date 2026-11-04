@@ -12,10 +12,7 @@ candidate; the rest are manual passes still to run before a public release.
   (`NotchEngineTests`, `NotchEnginePerformanceTests`)
 - [x] Geometry: every state fits the panel on notched and notchless displays; the closed notch
   hides inside the camera housing; a pointer at the top edge counts (`NotchMetricsTests`)
-- [x] Feature lifecycle: every feature starts, suspends, resumes, and releases everything,
-  including the media helper, the audio tap, and the camera (`FeatureLifecycleTests`)
-- [x] Media parsing, the fallback without the helper, the spectrum analyzer, system activities,
-  shelf persistence, EventKit mapping, notes, shortcuts, and timers
+- [x] Feature lifecycle, local shelf persistence, EventKit mapping, notes, shortcuts, and timers
 - [x] Snapshots of every state and tab render
 
 ## Performance
@@ -50,14 +47,6 @@ still to be set.
 - [ ] Full-screen apps: no notch over them
 - [ ] Notchless external display: the drawn notch sits inside the menu bar at every scaling, and the pill when picked
 - [ ] Charger in and out: the battery activity
-- [ ] Camera mirror: allow, deny, and revoke while running; the camera light turns off when the tab closes
-- [ ] Waveform: allow and deny system audio capture; switching output devices while playing
-- [ ] Network: a large download shows its speed on the closed notch within a few seconds and "Downloaded …" when it
-  ends, while a web page or a video doesn't; the speed stays under a meeting countdown and Keep Awake; NetSpeed's
-  history appears the first time; the numbers match Activity Monitor's Network tab; Wi-Fi off and on, an iPhone
-  hotspot, and a VPN don't make a spike; lock the Mac through a download and the hours it ran fill in
-- [ ] Replace the volume display: grant and revoke Accessibility while running
-- [ ] Media: Apple Music, Spotify, a browser, and QuickTime; kill the helper (`pkill -f mediaremote-adapter`) and check Media falls back
 - [ ] Shelf: deleted, moved, and corrupt files
 - [ ] Permissions granted, denied, and revoked while running (Calendar, Reminders)
 - [ ] Tasks: quick add in plain words, a timed task's alert on the notch and on iPhone, Snooze, and Block Time

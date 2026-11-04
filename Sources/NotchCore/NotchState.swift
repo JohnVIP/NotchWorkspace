@@ -3,23 +3,19 @@ import Foundation
 
 /// A feature that can own the expanded notch.
 public enum FeatureID: String, CaseIterable, Hashable, Sendable {
-    case media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror, agents
+    case calendar, shelf, tasks, notes, shortcuts, timer, agents
 
     /// SF Symbol for the tab's page in Settings, beside System Settings' own symbols. The notch draws
     /// Tabler icons instead (NotchSurface's `FeatureID.icon`). Every name here exists on macOS 14.6,
     /// the oldest supported.
     public var symbol: String {
         switch self {
-        case .media: "play.circle"
         case .shelf: "tray.full"
-        case .clipboard: "list.clipboard"
         case .calendar: Self.today
         case .tasks: "checklist"
         case .notes: "note.text"
         case .shortcuts: "square.2.layers.3d"
         case .timer: "timer"
-        case .network: "arrow.up.arrow.down.circle"
-        case .mirror: "web.camera"
         case .agents: "apple.terminal"
         }
     }
@@ -32,16 +28,12 @@ public enum FeatureID: String, CaseIterable, Hashable, Sendable {
 
     public var title: String {
         switch self {
-        case .media: "Media"
         case .shelf: "Shelf"
-        case .clipboard: "Clipboard"
         case .calendar: "Calendar"
         case .tasks: "Tasks"
         case .notes: "Notes"
         case .shortcuts: "Shortcuts"
         case .timer: "Timer"
-        case .network: "Network"
-        case .mirror: "Mirror"
         case .agents: "Agents"
         }
     }
@@ -63,12 +55,10 @@ public struct Activity: Hashable, Sendable {
     public var duration: Duration
     /// Shown instead of the title: the time left until this moment, ticking down to 0:00.
     public var countdown: Date?
-    /// A small encoded image shown in place of the symbol, such as the cover of what's playing.
-    public var artwork: Data?
 
     public init(
         feature: FeatureID?, symbol: String, title: String, level: Double? = nil, duration: Duration,
-        countdown: Date? = nil, artwork: Data? = nil
+        countdown: Date? = nil
     ) {
         self.feature = feature
         self.symbol = symbol
@@ -76,7 +66,6 @@ public struct Activity: Hashable, Sendable {
         self.level = level
         self.duration = duration
         self.countdown = countdown
-        self.artwork = artwork
     }
 }
 
@@ -195,7 +184,7 @@ public enum NotchTiming {
 public struct NotchState: Hashable, Sendable {
     public private(set) var presentation: NotchPresentationState = .hidden
     /// The tab to show the next time the notch expands. Always one of `tabs` when any exist.
-    public private(set) var lastTab: FeatureID = .media
+    public private(set) var lastTab: FeatureID = .calendar
     /// Enabled features in tab order. The notch never opens a tab missing from this list.
     public private(set) var tabs: [FeatureID] = FeatureID.allCases
     /// Every reason the notch is currently suspended.

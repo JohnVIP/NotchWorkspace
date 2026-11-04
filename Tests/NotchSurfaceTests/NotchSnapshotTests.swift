@@ -18,40 +18,29 @@ private let notchless = NotchMetrics(
 private let standIn = NotchMetrics(
     screen: CGRect(x: 0, y: 0, width: 2560, height: 1440), safeAreaTop: 0, left: nil, right: nil,
     standIn: CGSize(width: 185, height: 24))
-private let song = Activity(feature: .media, symbol: "music.note", title: "Midnight City", duration: .seconds(3))
+private let reminder = Activity(feature: .calendar, symbol: "bell.fill", title: "Standup", duration: .seconds(3))
 private let volume = Activity(
     feature: nil, symbol: "speaker.wave.2.fill", title: "56%", level: 0.56, duration: .seconds(1))
 private let meeting = Activity(
     feature: .calendar, symbol: "video.fill", title: "Standup", duration: .zero,
     countdown: Date(timeIntervalSinceNow: 272))
-private let copied = Activity(
-    feature: .clipboard, symbol: "doc.on.clipboard.fill", title: "Copied", duration: .seconds(2))
 private let waiting = Activity(feature: .agents, symbol: "hand.raised.fill", title: "2 waiting", duration: .zero)
-private let downloading = Activity(
-    feature: .network, symbol: "arrow.down.circle.fill", title: "24 MB/s", duration: .zero)
-private let downloaded = Activity(
-    feature: .network, symbol: "checkmark.circle.fill", title: "Downloaded 1.2 GB", duration: .seconds(3))
-
 private let snapshotCases: [(name: String, metrics: NotchMetrics, events: [NotchEvent])] = [
     ("compact", notched, [.show]),
     ("hover", notched, [.show, .pointerEntered]),
-    ("activity", notched, [.show, .activity(song)]),
-    ("copied", notched, [.show, .activity(copied)]),
+    ("activity", notched, [.show, .activity(reminder)]),
     ("volume", notched, [.show, .activity(volume)]),
     ("ongoing", notched, [.show, .setOngoing(meeting)]),
     ("ongoing-words", notched, [.show, .setOngoing(waiting)]),
     ("ongoing-hover", notched, [.show, .setOngoing(waiting), .pointerEntered]),
-    ("ongoing-speed", notched, [.show, .setOngoing(downloading)]),
-    ("downloaded", notched, [.show, .activity(downloaded)]),
-    ("pill-speed", notchless, [.show, .setOngoing(downloading)]),
-    ("pill-activity", notchless, [.show, .activity(copied)]),
+    ("pill-activity", notchless, [.show, .activity(reminder)]),
     ("pill-ongoing", notchless, [.show, .setOngoing(meeting)]),
-    ("expanded-media", notched, [.show, .clicked]),
+    ("expanded-calendar", notched, [.show, .clicked]),
     ("pinned-notes", notched, [.show, .selectTab(.notes), .togglePin]),
     ("pill-compact", notchless, [.show]),
     ("pill-expanded", notchless, [.show, .selectTab(.shelf)]),
     ("standin-compact", standIn, [.show]),
-    ("standin-activity", standIn, [.show, .activity(song)]),
+    ("standin-activity", standIn, [.show, .activity(reminder)]),
     ("standin-expanded", standIn, [.show, .selectTab(.shelf)]),
 ]
 
@@ -80,7 +69,7 @@ struct NotchSnapshotTests {
         preferences.theme = .glass
         try draw(name, metrics: metrics, events: [.show, .selectTab(.shelf)], preferences: preferences)
         try draw(name + "-closed", metrics: metrics, events: [.show], preferences: preferences)
-        try draw(name + "-activity", metrics: metrics, events: [.show, .activity(song)], preferences: preferences)
+        try draw(name + "-activity", metrics: metrics, events: [.show, .activity(reminder)], preferences: preferences)
     }
 
     /// The densest layout: every tab, Edit Tabs, the pin, and Settings in the header, and the resize
@@ -96,7 +85,7 @@ struct NotchSnapshotTests {
     /// smallest, and with every tab in the row.
     @Test func theTabEditorRenders() throws {
         let preferences = Self.preferences()
-        preferences.setEnabled(.clipboard, false)
+        preferences.setEnabled(.shortcuts, false)
         preferences.setEnabled(.agents, false)
         preferences.place(.timer, at: 1)
         let events: [NotchEvent] = [.show, .clicked]
@@ -154,14 +143,14 @@ struct NotchSnapshotTests {
     }
 
     @Test func aDraggedTabShowsWhereItWouldLand() {
-        let tabs: [FeatureID] = [.media, .shelf, .notes]
+        let tabs: [FeatureID] = [.calendar, .shelf, .notes]
         typealias Place = TabEditor.Place
         let moving = TabDrag(feature: .notes, fromRow: true, slot: 0)
-        #expect(TabEditor.places(tabs, during: moving) == [Place.tab(.notes), .tab(.media), .tab(.shelf)])
+        #expect(TabEditor.places(tabs, during: moving) == [Place.tab(.notes), .tab(.calendar), .tab(.shelf)])
         let joining = TabDrag(feature: .timer, fromRow: false, slot: 1)
-        #expect(TabEditor.places(tabs, during: joining) == [Place.tab(.media), .gap, .tab(.shelf), .tab(.notes)])
+        #expect(TabEditor.places(tabs, during: joining) == [Place.tab(.calendar), .gap, .tab(.shelf), .tab(.notes)])
         let leaving = TabDrag(feature: .shelf, fromRow: true, slot: nil)
-        #expect(TabEditor.places(tabs, during: leaving) == [Place.tab(.media), .tab(.notes)], "headed for the tray")
+        #expect(TabEditor.places(tabs, during: leaving) == [Place.tab(.calendar), .tab(.notes)], "headed for the tray")
         #expect(TabEditor.places(tabs, during: nil) == tabs.map(Place.tab))
     }
 

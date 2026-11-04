@@ -44,16 +44,12 @@ extension FeatureID {
     /// `symbol`, an SF Symbol, beside System Settings' own.
     var icon: String {
         switch self {
-        case .media: "music"
         case .shelf: "inbox"
-        case .clipboard: "clipboard-list"
         case .calendar: "calendar"
         case .tasks: "list-check"
         case .notes: "notes"
         case .shortcuts: "stack-2"
         case .timer: "alarm"
-        case .network: "ufo"  // beaming your data up and down
-        case .mirror: "device-computer-camera"
         case .agents: "terminal-2"
         }
     }

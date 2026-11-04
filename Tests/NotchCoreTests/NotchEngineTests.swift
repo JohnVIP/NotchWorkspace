@@ -13,7 +13,7 @@ struct NotchEngineTests {
         engine.send(.pointerExited)  // pointer bookkeeping only
         engine.send(.clicked)
         engine.send(.clicked)  // already open
-        #expect(changes == [.compact, .expanded(tab: .media)])
+        #expect(changes == [.compact, .expanded(tab: .calendar)])
     }
 
     @Test func timersFireThroughTheReducer() async throws {
@@ -21,7 +21,7 @@ struct NotchEngineTests {
         engine.send(.show)
         engine.send(.pointerEntered)
         #expect(engine.pendingDeadlines == [.hoverDwell])
-        #expect(await eventually { engine.state.presentation == .expanded(tab: .media) })
+        #expect(await eventually { engine.state.presentation == .expanded(tab: .calendar) })
         #expect(engine.pendingDeadlines.isEmpty)
     }
 
@@ -40,7 +40,7 @@ struct NotchEngineTests {
         engine.send(.clicked)
         engine.send(.pointerExited)  // spurious: the pointer never left
         engine.fire(.collapseGrace)
-        #expect(engine.state.presentation == .expanded(tab: .media))
+        #expect(engine.state.presentation == .expanded(tab: .calendar))
         #expect(engine.state.pointerInside && engine.pendingDeadlines.isEmpty)
     }
 
@@ -51,7 +51,7 @@ struct NotchEngineTests {
         engine.send(.clicked)
         engine.send(.pointerExited)
         engine.fire(.collapseGrace)
-        #expect(engine.state.presentation == .expanded(tab: .media))
+        #expect(engine.state.presentation == .expanded(tab: .calendar))
         #expect(engine.pendingDeadlines == [.collapseGrace], "it looks again after another grace period")
         engine.pointerCheck = { PointerCheck(isInside: false, isButtonDown: false) }
         engine.fire(.collapseGrace)
@@ -73,7 +73,7 @@ struct NotchEngineTests {
         engine.send(.show)
         engine.send(.pointerEntered)
         engine.send(.deadline(.hoverDwell))
-        #expect(engine.state.presentation == .expanded(tab: .media))
+        #expect(engine.state.presentation == .expanded(tab: .calendar))
         #expect(engine.pendingDeadlines.isEmpty)
     }
 }

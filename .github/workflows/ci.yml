@@ -79,8 +79,6 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
-        with:
-          submodules: true
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -103,8 +101,6 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
-        with:
-          submodules: true
 
       - name: Install XcodeGen
         run: brew install xcodegen

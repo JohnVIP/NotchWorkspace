@@ -152,12 +152,6 @@ public final class NotchPreferences {
         didSet { defaults.set(showsBattery, forKey: Key.showsBattery) }
     }
 
-    /// The notch shows volume changes instead of macOS's own display. Needs Accessibility access to
-    /// catch the volume keys; off until the user turns it on.
-    public var replacesVolumeDisplay: Bool {
-        didSet { defaults.set(replacesVolumeDisplay, forKey: Key.replacesVolumeDisplay) }
-    }
-
     /// Experimental: a Bluetooth keyboard, mouse, or trackpad's battery when it connects.
     public var showsAccessoryBattery: Bool {
         didSet { defaults.set(showsAccessoryBattery, forKey: Key.showsAccessoryBattery) }
@@ -175,18 +169,6 @@ public final class NotchPreferences {
     // ponytail: ⌃⌥O for "open", as Notes has ⌃⌥N for a new note; Settings changes it.
     public nonisolated static let defaultNotchShortcut = KeyShortcut(
         keyCode: 31, modifiers: KeyShortcut.control | KeyShortcut.option, key: "O")
-
-    /// Opens the Clipboard tab from any app, ready to search. Nil once the user clears it.
-    public var clipboardShortcut: KeyShortcut? {
-        didSet {
-            let data = clipboardShortcut.flatMap { try? JSONEncoder().encode($0) } ?? Data()
-            defaults.set(data, forKey: Key.clipboardShortcut)
-        }
-    }
-
-    /// ⌃⌥V: V for paste, beside the notch's ⌃⌥O.
-    public nonisolated static let defaultClipboardShortcut = KeyShortcut(
-        keyCode: 9, modifiers: KeyShortcut.control | KeyShortcut.option, key: "V")
 
     /// The open notch's size, set by dragging its bottom-right corner. Always within the minimum and
     /// maximum.
@@ -209,9 +191,6 @@ public final class NotchPreferences {
             return CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())
         }
 
-    /// Features that start off, like the camera mirror: turning those on is the user's call.
-    public nonisolated static let offByDefault: Set<FeatureID> = [.mirror]
-
     @ObservationIgnored private let defaults: UserDefaults
     /// Features this build can offer, in tab order. The App Store edition leaves out the ones the
     /// App Sandbox can't run.
@@ -224,12 +203,7 @@ public final class NotchPreferences {
         func features(_ key: String) -> Set<FeatureID> {
             Set((defaults.stringArray(forKey: key) ?? []).compactMap(FeatureID.init(rawValue:)))
         }
-        // A feature that's off by default starts off the first time this Mac sees it, including on
-        // an update that adds it; after that the stored choice wins.
-        let disabled = features(Key.disabledFeatures).union(Self.offByDefault.subtracting(features(Key.seenFeatures)))
-        disabledFeatures = disabled
-        defaults.set(disabled.map(\.rawValue).sorted(), forKey: Key.disabledFeatures)
-        defaults.set(FeatureID.allCases.map(\.rawValue), forKey: Key.seenFeatures)
+        disabledFeatures = features(Key.disabledFeatures)
         // The stored order, then whatever it doesn't know yet (a feature added by an update) at the end.
         var placed: Set<FeatureID> = []
         let stored = (defaults.stringArray(forKey: Key.tabOrder) ?? []).compactMap(FeatureID.init(rawValue:))
@@ -242,7 +216,6 @@ public final class NotchPreferences {
         theme = defaults.string(forKey: Key.theme).flatMap(NotchTheme.init) ?? .black
         showsVolume = defaults.object(forKey: Key.showsVolume) as? Bool ?? true
         showsBattery = defaults.object(forKey: Key.showsBattery) as? Bool ?? true
-        replacesVolumeDisplay = defaults.bool(forKey: Key.replacesVolumeDisplay)
         showsAccessoryBattery = defaults.bool(forKey: Key.showsAccessoryBattery)
         // Stored empty means cleared; nothing stored means the default.
         func shortcut(_ key: String, default value: KeyShortcut) -> KeyShortcut? {
@@ -250,7 +223,6 @@ public final class NotchPreferences {
             return try? JSONDecoder().decode(KeyShortcut.self, from: data)
         }
         notchShortcut = shortcut(Key.notchShortcut, default: Self.defaultNotchShortcut)
-        clipboardShortcut = shortcut(Key.clipboardShortcut, default: Self.defaultClipboardShortcut)
         if let size = defaults.array(forKey: Key.expandedSize) as? [Double], size.count == 2 {
             expandedSize = Self.clamped(CGSize(width: size[0], height: size[1]))
         } else {
@@ -316,7 +288,7 @@ public final class NotchPreferences {
 
     /// Restores every preference to its default.
     public func reset() {
-        disabledFeatures = Self.offByDefault
+        disabledFeatures = []
         tabOrder = available
         drawerOnly = []
         showOnAllDisplays = false
@@ -326,17 +298,14 @@ public final class NotchPreferences {
         expandedSize = Self.defaultExpandedSize
         showsVolume = true
         showsBattery = true
-        replacesVolumeDisplay = false
         showsAccessoryBattery = false
         notchShortcut = Self.defaultNotchShortcut
-        clipboardShortcut = Self.defaultClipboardShortcut
     }
 
     private enum Key {
         static let disabledFeatures = "disabledFeatures"
         static let tabOrder = "tabOrder"
         static let drawerOnly = "drawerOnly"
-        static let seenFeatures = "seenFeatures"
         static let showOnAllDisplays = "showOnAllDisplays"
         static let pillDisplays = "pillDisplays"
         static let animationStyle = "animationStyle"
@@ -344,10 +313,8 @@ public final class NotchPreferences {
         static let expandedSize = "expandedSize"
         static let showsVolume = "showsVolume"
         static let showsBattery = "showsBattery"
-        static let replacesVolumeDisplay = "replacesVolumeDisplay"
         static let showsAccessoryBattery = "showsAccessoryBattery"
         static let notchShortcut = "notchShortcut"
-        static let clipboardShortcut = "clipboardShortcut"
     }
 }
 

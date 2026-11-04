@@ -14,7 +14,6 @@ final class SettingsWindowController {
     private let preferences: NotchPreferences
     private let updater: Updater
     private let notchKey: HotKey
-    private let clipboardKey: HotKey
     private let previewAnimation: () -> Void
     private let featureSettings: (FeatureID) -> AnyView?
     private let selection = SettingsSelection()
@@ -22,13 +21,12 @@ final class SettingsWindowController {
 
     /// `featureSettings` supplies each tab's own settings, as the sections of its page.
     init(
-        preferences: NotchPreferences, updater: Updater, notchKey: HotKey, clipboardKey: HotKey,
+        preferences: NotchPreferences, updater: Updater, notchKey: HotKey,
         previewAnimation: @escaping () -> Void, featureSettings: @escaping (FeatureID) -> AnyView?
     ) {
         self.preferences = preferences
         self.updater = updater
         self.notchKey = notchKey
-        self.clipboardKey = clipboardKey
         self.previewAnimation = previewAnimation
         self.featureSettings = featureSettings
     }
@@ -38,7 +36,7 @@ final class SettingsWindowController {
         if let page { selection.page = page }
         if window == nil {
             let root = SettingsView(
-                preferences: preferences, updater: updater, notchKey: notchKey, clipboardKey: clipboardKey,
+                preferences: preferences, updater: updater, notchKey: notchKey,
                 previewAnimation: previewAnimation, featureSettings: featureSettings, selection: selection)
             let host = NSHostingController(rootView: root)
             // The page's name goes in the toolbar, over a sidebar that runs to the top of the window.
@@ -75,7 +73,6 @@ struct SettingsView: View {
     let preferences: NotchPreferences
     let updater: Updater
     let notchKey: HotKey
-    let clipboardKey: HotKey
     let previewAnimation: () -> Void
     let featureSettings: (FeatureID) -> AnyView?
     @Bindable var selection: SettingsSelection
@@ -110,7 +107,7 @@ struct SettingsView: View {
     @ViewBuilder private var page: some View {
         switch selection.page {
         case .about: AboutSettings(updater: updater)
-        case .general: GeneralPage(preferences: preferences, notchKey: notchKey, clipboardKey: clipboardKey)
+        case .general: GeneralPage(preferences: preferences, notchKey: notchKey)
         case .appearance: AppearancePage(preferences: preferences, previewAnimation: previewAnimation)
         case .displays: DisplaysPage(preferences: preferences)
         case .activities: ActivitiesPage(preferences: preferences)
@@ -142,16 +139,12 @@ extension SettingsSelection.Page {
         case .activities: ("bell.badge", .red)
         case .feature(let feature):
             switch feature {
-            case .media: ("play", .pink)
             case .shelf: (feature.symbol, .blue)
-            case .clipboard: (feature.symbol, .teal)
             case .calendar: (feature.symbol, .red)
             case .tasks: (feature.symbol, .orange)
             case .notes: (feature.symbol, .yellow)
             case .shortcuts: (feature.symbol, .indigo)
             case .timer: (feature.symbol, .orange)
-            case .network: ("arrow.up.arrow.down", .blue)
-            case .mirror: (feature.symbol, .green)
             case .agents: (feature.symbol, .gray)
             }
         }
@@ -167,16 +160,12 @@ extension SettingsSelection.Page {
         case .activities: "What the closed notch shows for a moment when something changes."
         case .feature(let feature):
             switch feature {
-            case .media: "What's playing in any app, with artwork, controls, and a waveform."
             case .shelf: "Files you drop on the notch, at hand to drag out, preview, or share."
-            case .clipboard: "A searchable history of what you copy, with favorites that stay."
             case .calendar: "Today's events, with a Join button and a countdown for calls."
             case .tasks: "Your Reminders, synced to your iPhone through iCloud."
             case .notes: "Markdown notes that save as you type."
             case .shortcuts: "The shortcuts you make in the Shortcuts app, a click away."
             case .timer: "Timers, a stopwatch with laps, and Keep Awake."
-            case .network: "Your download and upload speed, and how much you've used."
-            case .mirror: "Your camera, on only while its tab is open."
             case .agents: "When Claude Code or Codex needs you or finishes, in the closed notch."
             }
         }
@@ -282,7 +271,6 @@ private struct FeaturePage: View {
 private struct GeneralPage: View {
     @Bindable var preferences: NotchPreferences
     let notchKey: HotKey
-    let clipboardKey: HotKey
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
     @State private var confirmsReset = false
@@ -306,23 +294,13 @@ private struct GeneralPage: View {
                         notchKey, preferences.notchShortcut,
                         "From any app, on the display under the pointer. Press it again or Escape to close.")
                 }
-                if preferences.isEnabled(.clipboard) {
-                    LabeledContent {
-                        ShortcutRecorder(shortcut: $preferences.clipboardShortcut, hotKey: clipboardKey)
-                    } label: {
-                        Text("Search the clipboard")
-                        shortcutNote(
-                            clipboardKey, preferences.clipboardShortcut,
-                            "Opens the Clipboard tab ready to type; Return copies the first match.")
-                    }
-                }
             }
             Section {
                 LabeledContent {
                     Button("Reset\u{2026}", role: .destructive) { confirmsReset = true }
                 } label: {
                     Text("Reset to defaults")
-                    Text("Tabs, their order, shortcuts, appearance, and displays. Your notes, shelf, and history stay.")
+                    Text("Tabs, their order, shortcuts, appearance, and displays. Your notes and shelf stay.")
                 }
                 .confirmationDialog("Reset ILoveNotch's settings?", isPresented: $confirmsReset) {
                     Button("Reset to Defaults", role: .destructive) { preferences.reset() }
@@ -514,29 +492,11 @@ private struct DisplaysPage: View {
 /// Live activities that belong to no tab: volume, battery, and accessories.
 private struct ActivitiesPage: View {
     @Bindable var preferences: NotchPreferences
-    @State private var trusted = VolumeKeyTap.isTrusted
 
     var body: some View {
         SettingsPage(page: .activities) {
             Section("Volume") {
                 Toggle("Show volume changes", isOn: $preferences.showsVolume)
-                #if !APP_STORE  // the App Sandbox allows neither the volume-key tap nor the accessory monitor
-                    // A closure, not a method reference: see GeneralPage.
-                    let replaces = Binding(
-                        get: { preferences.replacesVolumeDisplay }, set: { setReplacesVolumeDisplay($0) })
-                    Toggle(isOn: replaces) {
-                        Text("Replace the macOS volume display")
-                        Text("Catches the volume keys so the change shows in the notch. Needs Accessibility access.")
-                    }
-                    .disabled(!preferences.showsVolume)
-                    if preferences.replacesVolumeDisplay, !trusted {
-                        LabeledContent("Accessibility") {
-                            Button("Open Accessibility Settings") {
-                                NSWorkspace.shared.open(.privacySettings("Privacy_Accessibility"))
-                            }
-                        }
-                    }
-                #endif
             }
             Section("Battery") {
                 Toggle("Show charging and battery", isOn: $preferences.showsBattery)
@@ -548,13 +508,6 @@ private struct ActivitiesPage: View {
                 #endif
             }
         }
-        .onAppear { trusted = VolumeKeyTap.isTrusted }
-    }
-
-    private func setReplacesVolumeDisplay(_ replaces: Bool) {
-        preferences.replacesVolumeDisplay = replaces
-        trusted = VolumeKeyTap.isTrusted
-        if replaces, !trusted { VolumeKeyTap.requestTrust() }
     }
 }
 

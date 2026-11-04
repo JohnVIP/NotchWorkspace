@@ -18,30 +18,30 @@ struct FeatureHostTests {
     private let all = Set(FeatureID.allCases)
 
     @Test func featuresFollowTheActivationPolicy() {
-        let media = RecordingFeature(.media)
+        let calendar = RecordingFeature(.calendar)
         let notes = RecordingFeature(.notes)
-        let host = FeatureHost([media, notes])
+        let host = FeatureHost([calendar, notes])
 
         host.update(presentations: [.compact], enabled: all)
-        #expect(media.phase == .background && notes.phase == .background)
-        host.update(presentations: [.expanded(tab: .media)], enabled: all)
-        #expect(media.phase == .foreground && notes.phase == .background)
+        #expect(calendar.phase == .background && notes.phase == .background)
+        host.update(presentations: [.expanded(tab: .calendar)], enabled: all)
+        #expect(calendar.phase == .foreground && notes.phase == .background)
         host.update(presentations: [.pinned(tab: .notes)], enabled: all)
-        #expect(media.phase == .background && notes.phase == .foreground)
+        #expect(calendar.phase == .background && notes.phase == .foreground)
         host.update(presentations: [.suspended], enabled: all)
-        #expect(media.phase == .stopped && notes.phase == .stopped)
-        #expect(media.history == [.background, .foreground, .background, .stopped])
+        #expect(calendar.phase == .stopped && notes.phase == .stopped)
+        #expect(calendar.history == [.background, .foreground, .background, .stopped])
     }
 
     @Test func aFeatureRunsAtTheHighestPhaseAnyDisplayAsks() {
-        let media = RecordingFeature(.media)
-        let host = FeatureHost([media])
-        host.update(presentations: [.compact, .expanded(tab: .media)], enabled: all)
-        #expect(media.phase == .foreground)
+        let calendar = RecordingFeature(.calendar)
+        let host = FeatureHost([calendar])
+        host.update(presentations: [.compact, .expanded(tab: .calendar)], enabled: all)
+        #expect(calendar.phase == .foreground)
         host.update(presentations: [.suspended, .compact], enabled: all)
-        #expect(media.phase == .background)
+        #expect(calendar.phase == .background)
         host.update(presentations: [], enabled: all)
-        #expect(media.phase == .stopped)
+        #expect(calendar.phase == .stopped)
     }
 
     @Test func aLiveActivityBringsItsFeatureForward() {
@@ -53,10 +53,10 @@ struct FeatureHostTests {
     }
 
     @Test func disabledFeaturesStayStopped() {
-        let media = RecordingFeature(.media)
-        let host = FeatureHost([media])
-        host.update(presentations: [.expanded(tab: .media)], enabled: [.notes])
-        #expect(media.phase == .stopped)
-        #expect(media.history.isEmpty, "a phase that doesn't change must not be reassigned")
+        let calendar = RecordingFeature(.calendar)
+        let host = FeatureHost([calendar])
+        host.update(presentations: [.expanded(tab: .calendar)], enabled: [.notes])
+        #expect(calendar.phase == .stopped)
+        #expect(calendar.history.isEmpty, "a phase that doesn't change must not be reassigned")
     }
 }

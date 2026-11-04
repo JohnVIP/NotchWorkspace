@@ -19,8 +19,8 @@ https://github.com/user-attachments/assets/9d0c486c-5169-4297-b8b9-8fedbb9eadda
 </p>
 
 An **original, open-source** macOS menu-notch utility — turns the notch on Apple
-Silicon MacBooks into an interactive tray for media, files, your
-calendar, tasks, notes, shortcuts, timers, network speed, camera, and coding agent status.
+Silicon MacBooks into an interactive tray for files, calendars,
+tasks, notes, shortcuts, timers, and coding agent status.
 Built with SwiftUI and AppKit.
 
 <p align="center">
@@ -49,17 +49,6 @@ version in the [changelog](CHANGELOG.md).
   [TestFlight beta](https://testflight.apple.com/join/6p3zqhCS).
 - **From source:** see [Build & run](#build--run).
 
-## Coming from NotchNook?
-
-NotchNook's license server went offline in September 2026, so paid licenses
-stopped activating, and lo.cafe
-[told customers to use an alternative](https://x.com/locafe_24h/status/2095262917486665735).
-ILoveNotch covers the everyday things: now playing and every app's volume, a
-file shelf, and your calendar, plus Reminders, notes, Shortcuts, timers, and
-your network speed. There's no license,
-account, or server that can go away, and it's MIT licensed, so the code stays
-public and buildable whatever happens to the project.
-
 ## What it does
 
 - **The notch.** Opens when you hover it, click it, pull down with two fingers,
@@ -74,15 +63,8 @@ public and buildable whatever happens to the project.
   notch. On macOS 26, open it in Liquid Glass instead of black. Works on every
   display: where there's no notch, it draws one inside the menu bar, or a
   floating pill if you'd rather.
-- **Media.** What's playing in any app, with artwork, controls, shuffle and
-  repeat, a seek bar, and a waveform that moves with the music. Music's up next
-  and lyrics, Spotify's recently played, swipe to skip, and
-  the cover in the closed notch while it plays.
 - **Shelf.** Drop files on the notch to keep them at hand; drag them back out,
   preview them with Quick Look, or send them with AirDrop.
-- **Clipboard.** Turn on a history of what you copy (text, links, images, and
-  files), search it with ⌃⌥V from any app, and copy anything again, with
-  favorites that stay. Passwords and anything marked private are skipped.
 - **Calendar and Tasks.** Today's events with the tasks due today, an event
   field that understands "Lunch tomorrow 1pm", and your own events to edit or
   delete right in the notch. A Join button for Zoom,
@@ -97,20 +79,12 @@ public and buildable whatever happens to the project.
   Control-Option-N shortcut; your shortcuts one click away; a timer and a
   stopwatch with laps; and Keep Awake, which stops your Mac sleeping for a
   while or until you turn it off, with the time left in the closed notch.
-- **Network.** Your download and upload speed as it happens, over a graph of
-  the last minute, and how much you've downloaded, uploaded, and both together,
-  by the hour, day, or month. The menu bar beside the notch shows the speed
-  while a download runs, and what it downloaded when it's done.
-  [More below](#network).
-- **Mirror.** Your camera, off until you turn it on, and on only while its tab
-  is open.
 - **Agents.** When Claude Code or Codex needs your approval, the closed notch
   says so until you answer, and it tells you when one finishes while you're in
   another app; one click takes you back to its terminal.
   [More below](#agent-status).
 - **System activities.** Volume, charging and battery, and Bluetooth accessory
-  batteries show briefly in the notch, and it can stand in for the macOS volume
-  display.
+  batteries show briefly in the notch.
 - **Show in Notch.** A Shortcuts action and an `ilovenotch://` link put your own
   message in the notch, from any shortcut, automation, script, or app.
   [More below](#show-in-notch).
@@ -148,13 +122,7 @@ The upstream build was measured over a real 20-hour workday on an Apple M5 Pro M
 
 1. **No polling timers.** State changes come from events (hover, clicks, system
    notifications). The only timers are one-shot deadlines, like the hover dwell,
-   cancelled the moment they stop mattering. Idle app = idle CPU. The two
-   exceptions are clipboard history, since macOS has no "clipboard changed"
-   event: off until you turn it on, it then reads a counter twice a second;
-   and the Network tab, since bytes moving raise no event either: it reads the
-   network's byte counters every second only while a speed is on screen, every
-   3 seconds while the closed notch waits for a download, and otherwise once an
-   hour ([Network](#network)).
+   cancelled the moment they stop mattering.
 2. **Accessory app.** No Dock icon (`LSUIElement`), one small menu bar item for
    Settings and Quit, and the notch never steals focus (`nonactivatingPanel`).
 3. **Lazy features.** Each feature module is `stopped`, `background` (cheap
@@ -180,10 +148,9 @@ hover, clicks, drags, sleep/lock, display changes
 | `App/` | App target generated from `project.yml`: wires features in, menu bar item, Settings |
 | `NotchCore` | State machine, `NotchEngine`, `FeatureHost` lifecycle, preferences, typed logging and signposts. No AppKit. |
 | `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`), and the tab row's editor (`TabEditor`) and app drawer (`AppDrawer`) |
-| `NotchFeatures` | Feature modules (Media, Shelf, Clipboard, Calendar, Tasks, Notes, Shortcuts, Timer, Network, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors and hooks (volume, battery, accessories, volume keys, keyboard shortcuts, Show in Notch) |
+| `NotchFeatures` | Feature modules (Shelf, Calendar, Tasks, Notes, Shortcuts, Timer), each a `NotchFeature` with its views and settings, and the event-driven system monitors and hooks (volume, battery, accessories, keyboard shortcuts, Show in Notch) |
 | `NotchAgents` | The GitHub build’s Claude Code and Codex status and hooks |
-| `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
-| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features, network counters and history), offscreen snapshot tests, XCTest performance tests |
+| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features), offscreen snapshot tests, XCTest performance tests |
 
 The full design is in the [implementation plan](docs/plan/implementation-plan.md)
 and the [architecture diagram](docs/plan/architecture.html).
@@ -193,9 +160,9 @@ and the [architecture diagram](docs/plan/architecture.html).
 Requires macOS 14.6+, Xcode 16+, and [Homebrew](https://brew.sh).
 
 ```bash
-git clone --recurse-submodules https://github.com/niyamvora/ILoveNotch.git
+git clone https://github.com/niyamvora/ILoveNotch.git
 cd ILoveNotch
-make setup                        # installs XcodeGen (Brewfile) and fetches submodules
+make setup                        # installs XcodeGen (Brewfile)
 make run                          # generate the Xcode project, build, and launch ILoveNotch.app
 make install                      # build a Release app into /Applications and launch it
 make update                       # pull main when it's clean, then reinstall and relaunch
@@ -236,52 +203,6 @@ log stream --level debug --predicate 'subsystem == "cafe.opennotch.app"'
 7. To uninstall, choose **Quit** from the menu bar item and delete
    `/Applications/ILoveNotch.app`; data lives in
    `~/Library/Application Support/OpenNotch`.
-
-## Now playing
-
-Since macOS 15.4, only Apple's own processes may read system-wide now-playing
-information. ILoveNotch uses [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter),
-which runs in the system `perl` (an Apple process) as a separate helper, so the
-private framework never loads into ILoveNotch. If a future macOS breaks it, Media
-falls back to Music and Spotify's public notifications and says so.
-
-The waveform under the player moves with the music. It listens to your Mac's
-audio output only while Media is open and playing, so macOS asks once for
-permission to capture system audio. Nothing is recorded; see
-[PRIVACY.md](PRIVACY.md). Turn it off in **Settings › Media**.
-
-## Network
-
-The Network tab is [NetSpeed](https://github.com/niyamvora/NetSpeed), a menu
-bar app, moved into the notch. On its left is your download speed as it
-happens, with the upload's under it, over a glowing graph of the last minute. On
-its right is what you've downloaded, uploaded, and both together in the last 24
-hours, 7 days, 30 days, or 12 months, over bars by the hour, day, or month; point
-at a bar for its own three numbers.
-
-The closed notch shows the speed beside the camera while a download or upload
-runs at 1 MB/s or more for a few seconds, and when a big one finishes it says
-how much it moved. Hover the speed to open the tab. **Show speed in the menu
-bar**, in Settings › Network, picks Always (like NetSpeed's menu bar
-item), While Downloading, or Never. It stays under any other live activity, such
-as a meeting's countdown.
-
-It counts the bytes your Mac's own network interfaces report (Wi-Fi, Ethernet,
-and iPhone tethering, leaving out VPN tunnels, which would count them twice),
-the way NetSpeed did, and needs no permission. The history keeps one row per
-hour on this Mac, about 250 KB a year, and the first time the tab runs it brings
-in NetSpeed's history. What moves while the Mac is locked or its display sleeps
-still counts, shared among those hours.
-
-There's no event for bytes moving, so it reads the counters, 40 µs each time:
-every second while a speed is on screen, every 3 seconds while the closed notch
-waits for a transfer, and otherwise once an hour for the history. Measured with
-the kernel's own counters, waiting costs about 8 ms of CPU a minute (0.013% of
-one core), where NetSpeed averaged 146 ms a minute redrawing the menu bar every
-second; showing a download's speed on the closed notch costs about 0.3% of one
-core, and the open tab about 0.6%. The numbers change without rolling: rolled,
-they kept the open tab busy at 12–51% of a core. It adds about half a megabyte
-of memory.
 
 ## Agent status
 

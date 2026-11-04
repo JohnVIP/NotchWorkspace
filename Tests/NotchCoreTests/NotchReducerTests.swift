@@ -4,7 +4,7 @@ import Testing
 
 @testable import NotchCore
 
-private let song = Activity(feature: .media, symbol: "music.note", title: "Song", duration: .seconds(2))
+private let shortcutNotice = Activity(feature: .shortcuts, symbol: "checkmark", title: "Done", duration: .seconds(2))
 private let drop = Activity(feature: .shelf, symbol: "tray.full", title: "2 files", duration: .seconds(1))
 /// A system activity: it belongs to no tab.
 private let volume = Activity(
@@ -31,7 +31,7 @@ struct NotchReducerTests {
         #expect(state.presentation == .compact)
     }
 
-    @Test(arguments: [NotchEvent.pointerEntered, .clicked, .selectTab(.notes), .activity(song), .dragEntered])
+    @Test(arguments: [NotchEvent.pointerEntered, .clicked, .selectTab(.notes), .activity(shortcutNotice), .dragEntered])
     func hiddenIgnoresEverythingButShow(event: NotchEvent) {
         var state = NotchState()
         #expect(state.handle(event).isEmpty)
@@ -43,7 +43,7 @@ struct NotchReducerTests {
         #expect(state.handle(.pointerEntered) == [.schedule(.hoverDwell, after: NotchTiming.hoverDwell)])
         #expect(state.presentation == .hoverArmed)
         #expect(state.handle(.deadline(.hoverDwell)).isEmpty)
-        #expect(state.presentation == .expanded(tab: .media))
+        #expect(state.presentation == .expanded(tab: .calendar))
     }
 
     @Test func aQuickPassDoesNotExpand() {
@@ -53,10 +53,10 @@ struct NotchReducerTests {
     }
 
     @Test func clickingExpandsWithoutWaiting() {
-        #expect(after(.show, .clicked).presentation == .expanded(tab: .media))
+        #expect(after(.show, .clicked).presentation == .expanded(tab: .calendar))
         var state = after(.show, .pointerEntered)
         #expect(state.handle(.clicked) == [.cancel(.hoverDwell)])
-        #expect(state.presentation == .expanded(tab: .media))
+        #expect(state.presentation == .expanded(tab: .calendar))
     }
 
     @Test func leavingStartsTheCollapseGraceAndReturningCancelsIt() {
@@ -65,7 +65,7 @@ struct NotchReducerTests {
         #expect(state.handle(.pointerEntered) == [.cancel(.collapseGrace)])
         // A deadline that fires late, after the pointer came back, must not collapse the notch.
         #expect(state.handle(.deadline(.collapseGrace)).isEmpty)
-        #expect(state.presentation == .expanded(tab: .media))
+        #expect(state.presentation == .expanded(tab: .calendar))
     }
 
     @Test func theGraceRunningOutCollapses() {
@@ -81,11 +81,11 @@ struct NotchReducerTests {
 
     @Test func pinnedStaysOpenUntilDismissed() {
         var state = after(.show, .clicked, .togglePin)
-        #expect(state.presentation == .pinned(tab: .media))
+        #expect(state.presentation == .pinned(tab: .calendar))
         #expect(state.presentation.isPinned)
         #expect(state.handle(.pointerExited).isEmpty)
         #expect(state.handle(.clickedOutside).isEmpty)
-        #expect(state.presentation == .pinned(tab: .media))
+        #expect(state.presentation == .pinned(tab: .calendar))
         #expect(state.handle(.dismiss).isEmpty)
         #expect(state.presentation == .compact)
     }
@@ -93,26 +93,26 @@ struct NotchReducerTests {
     @Test func pinningCancelsAPendingCollapse() {
         var state = after(.show, .clicked, .pointerExited)
         #expect(state.handle(.togglePin) == [.cancel(.collapseGrace)])
-        #expect(state.presentation == .pinned(tab: .media))
+        #expect(state.presentation == .pinned(tab: .calendar))
         #expect(state.handle(.togglePin).isEmpty)
-        #expect(state.presentation == .expanded(tab: .media))
+        #expect(state.presentation == .expanded(tab: .calendar))
     }
 
     @Test(arguments: [false, true])
     func textInputReturnsToWhereItStarted(pinned: Bool) {
         var state = after(pinned ? [.show, .clicked, .togglePin] : [.show, .clicked])
         _ = state.handle(.beginTextInput)
-        #expect(state.presentation == .focused(tab: .media, pinned: pinned))
+        #expect(state.presentation == .focused(tab: .calendar, pinned: pinned))
         // Moving the pointer away mid-sentence must not close the notch.
         #expect(state.handle(.pointerExited).isEmpty)
         _ = state.handle(.endTextInput)
-        #expect(state.presentation == (pinned ? .pinned(tab: .media) : .expanded(tab: .media)))
+        #expect(state.presentation == (pinned ? .pinned(tab: .calendar) : .expanded(tab: .calendar)))
     }
 
     @Test func clickingAwayEndsTextInputButKeepsAPin() {
         #expect(after(.show, .clicked, .beginTextInput, .clickedOutside).presentation == .compact)
         let pinned = after(.show, .clicked, .togglePin, .beginTextInput, .clickedOutside)
-        #expect(pinned.presentation == .pinned(tab: .media))
+        #expect(pinned.presentation == .pinned(tab: .calendar))
     }
 
     @Test func switchingTabsWhileTypingKeepsFocusAndThePin() {
@@ -131,14 +131,14 @@ struct NotchReducerTests {
 
     @Test func anActivityShowsUntilItsDeadline() {
         var state = after(.show)
-        #expect(state.handle(.activity(song)) == [.schedule(.activityEnd, after: song.duration)])
-        #expect(state.presentation == .transient(song))
+        #expect(state.handle(.activity(shortcutNotice)) == [.schedule(.activityEnd, after: shortcutNotice.duration)])
+        #expect(state.presentation == .transient(shortcutNotice))
         #expect(state.handle(.deadline(.activityEnd)).isEmpty)
         #expect(state.presentation == .compact)
     }
 
     @Test func aNewActivityReplacesTheCurrentOne() {
-        var state = after(.show, .activity(song))
+        var state = after(.show, .activity(shortcutNotice))
         #expect(state.handle(.activity(drop)) == [.schedule(.activityEnd, after: drop.duration)])
         #expect(state.presentation == .transient(drop))
     }
@@ -162,7 +162,7 @@ struct NotchReducerTests {
         var hovered = after(.show, .activity(volume))
         _ = hovered.handle(.pointerEntered)
         _ = hovered.handle(.deadline(.hoverDwell))
-        #expect(hovered.presentation == .expanded(tab: .media))
+        #expect(hovered.presentation == .expanded(tab: .calendar))
         #expect(after(.show, .setTabs([]), .activity(volume), .pointerEntered).presentation == .transient(volume))
     }
 
@@ -176,19 +176,20 @@ struct NotchReducerTests {
     }
 
     @Test func hoveringOrClickingAnOngoingActivityOpensItsFeature() {
-        var hovered = after(.show, .setOngoing(meeting))
+        let resting: [NotchEvent] = [.show, .selectTab(.notes), .dismiss, .setOngoing(meeting)]
+        var hovered = after(resting)
         _ = hovered.handle(.pointerEntered)
         #expect(hovered.restingActivity == meeting, "hovered, it stays in view, so the pointer stays on it")
         _ = hovered.handle(.deadline(.hoverDwell))
         #expect(hovered.presentation == .expanded(tab: .calendar))
-        #expect(after(.show, .setOngoing(meeting), .clicked).presentation == .expanded(tab: .calendar))
+        #expect(after(resting + [.clicked]).presentation == .expanded(tab: .calendar))
         let closed = after(.show, .setOngoing(meeting), .clicked, .dismiss)
         #expect(closed.restingActivity == meeting, "and it's back when the notch closes")
     }
 
     @Test func oneShotActivitiesShowOverAnOngoingOne() {
-        var state = after(.show, .setOngoing(meeting), .activity(song))
-        #expect(state.presentation == .transient(song) && state.restingActivity == nil)
+        var state = after(.show, .setOngoing(meeting), .activity(shortcutNotice))
+        #expect(state.presentation == .transient(shortcutNotice) && state.restingActivity == nil)
         _ = state.handle(.deadline(.activityEnd))
         #expect(state.restingActivity == meeting)
     }
@@ -202,8 +203,8 @@ struct NotchReducerTests {
 
     @Test func activitiesDoNotInterruptAnOpenNotch() {
         var state = after(.show, .clicked)
-        #expect(state.handle(.activity(song)).isEmpty)
-        #expect(state.presentation == .expanded(tab: .media))
+        #expect(state.handle(.activity(shortcutNotice)).isEmpty)
+        #expect(state.presentation == .expanded(tab: .calendar))
     }
 
     @Test func draggingFilesOverTheNotchOpensTheShelf() {
@@ -220,7 +221,7 @@ struct NotchReducerTests {
 
     @Test func draggingKeepsAPinAndIgnoresADisabledShelf() {
         #expect(after(.show, .clicked, .togglePin, .dragEntered).presentation == .pinned(tab: .shelf))
-        #expect(after(.show, .setTabs([.media, .notes]), .dragEntered).presentation == .compact)
+        #expect(after(.show, .setTabs([.calendar, .notes]), .dragEntered).presentation == .compact)
     }
 
     @Test func overlappingSuspensionsAllHaveToClear() {
@@ -228,7 +229,7 @@ struct NotchReducerTests {
         #expect(state.handle(.suspend(.screenLocked)) == [.cancel(.collapseGrace)])
         _ = state.handle(.suspend(.systemSleep))
         #expect(state.handle(.clicked).isEmpty)
-        #expect(state.handle(.activity(song)).isEmpty)
+        #expect(state.handle(.activity(shortcutNotice)).isEmpty)
         _ = state.handle(.resume(.systemSleep))
         #expect(state.presentation == .suspended, "still locked")
         _ = state.handle(.resume(.screenLocked))
@@ -248,15 +249,15 @@ struct NotchReducerTests {
     }
 
     @Test func disabledFeaturesNeverOpenOrRaiseActivities() {
-        #expect(after(.show, .setTabs([.notes]), .selectTab(.media)).presentation == .expanded(tab: .notes))
-        #expect(after(.show, .setTabs([.notes]), .activity(song)).presentation == .compact)
-        #expect(after(.show, .activity(song), .setTabs([.notes])).presentation == .compact)
+        #expect(after(.show, .setTabs([.notes]), .selectTab(.calendar)).presentation == .expanded(tab: .notes))
+        #expect(after(.show, .setTabs([.notes]), .activity(shortcutNotice)).presentation == .compact)
+        #expect(after(.show, .activity(shortcutNotice), .setTabs([.notes])).presentation == .compact)
         #expect(after(.show, .setTabs([]), .clicked).presentation == .compact)
     }
 
     @Test(arguments: [
         [NotchEvent.show], [.show, .pointerEntered], [.show, .clicked], [.show, .clicked, .togglePin],
-        [.show, .clicked, .beginTextInput], [.show, .activity(song)], [.show, .suspend(.systemSleep)],
+        [.show, .clicked, .beginTextInput], [.show, .activity(shortcutNotice)], [.show, .suspend(.systemSleep)],
     ])
     func hideWorksFromEveryStateAndCancelsItsDeadline(path: [NotchEvent]) {
         var state = after(path)
@@ -274,7 +275,7 @@ struct NotchReducerTests {
         let inputs: [NotchEvent] =
             [
                 .show, .hide, .pointerEntered, .pointerExited, .clicked, .clickedOutside, .dismiss, .togglePin,
-                .beginTextInput, .endTextInput, .dragEntered, .dragExited, .dropped, .activity(song),
+                .beginTextInput, .endTextInput, .dragEntered, .dragExited, .dropped, .activity(shortcutNotice),
                 .activity(drop), .activity(volume), .setTabs(FeatureID.allCases), .setTabs([.notes, .shelf]),
                 .setTabs([]), .setOngoing(meeting), .setOngoing(nil),
             ] + FeatureID.allCases.map(NotchEvent.selectTab) + reasons.map(NotchEvent.suspend)

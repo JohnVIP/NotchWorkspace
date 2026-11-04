@@ -7,14 +7,6 @@ import Testing
 @testable import NotchFeatures
 
 struct VolumeTests {
-    @Test func theKeysStepInSixteenthsOrQuarterStepsAndStopAtTheEnds() {
-        #expect(VolumeMonitor.stepped(0.5, up: true, fine: false) == 9.0 / 16)
-        #expect(VolumeMonitor.stepped(0.5, up: false, fine: true) == 31.0 / 64)
-        #expect(VolumeMonitor.stepped(1, up: true, fine: false) == 1)
-        #expect(VolumeMonitor.stepped(0.02, up: false, fine: false) == 0)
-        #expect(VolumeMonitor.stepped(0.53, up: true, fine: false) == 9.0 / 16, "snaps to the nearest notch first")
-    }
-
     @Test func theNotchShowsTheLevelAsWavesAPercentageAndAMeter() {
         let half = VolumeMonitor.activity(for: VolumeState(level: 0.5, muted: false))
         #expect(half.symbol == "speaker.wave.2.fill" && half.title == "50%" && half.level == 0.5)
@@ -22,16 +14,6 @@ struct VolumeTests {
         let muted = VolumeMonitor.activity(for: VolumeState(level: 0.8, muted: true))
         #expect(muted.symbol == "speaker.slash.fill" && muted.title == "Muted" && muted.level == 0)
         #expect(VolumeMonitor.activity(for: VolumeState(level: 1, muted: false)).symbol == "speaker.wave.3.fill")
-    }
-
-    @Test func onlyTheVolumeKeysAreRecognized() throws {
-        let up = try #require(VolumeKeyTap.volumeKey(data1: 0 << 16 | 0xA00))
-        #expect(up.key == .up && up.isDown)
-        let released = try #require(VolumeKeyTap.volumeKey(data1: 1 << 16 | 0xB00))
-        #expect(released.key == .down && !released.isDown)
-        #expect(VolumeKeyTap.volumeKey(data1: 7 << 16 | 0xA01)?.key == .mute, "a repeat still counts")
-        #expect(VolumeKeyTap.volumeKey(data1: 2 << 16 | 0xA00) == nil, "brightness isn't ours")
-        #expect(VolumeKeyTap.volumeKey(data1: 16 << 16 | 0xA00) == nil, "neither is play/pause")
     }
 }
 
@@ -84,7 +66,7 @@ struct SystemActivitySymbolTests {
         }
         let symbols =
             volumes.map(\.symbol) + batteries + accessories
-            + ["speaker.slash.fill", "battery.100percent.bolt", FeatureID.mirror.symbol, "video.slash"]
+            + ["speaker.slash.fill", "battery.100percent.bolt"]
         for symbol in Set(symbols) {
             #expect(NSImage(systemSymbolName: symbol, accessibilityDescription: nil) != nil, "\(symbol)")
         }
@@ -146,15 +128,5 @@ struct ShowInNotchTests {
     ])
     func otherLinksAreIgnored(link: String) throws {
         #expect(ShowInNotch.activity(from: try #require(URL(string: link))) == nil)
-    }
-}
-
-@MainActor
-struct MirrorTests {
-    @Test func theCameraRunsOnlyWhileTheMirrorCanBeSeen() {
-        #expect(MirrorFeature.runsCamera(phase: .foreground, access: .granted))
-        #expect(!MirrorFeature.runsCamera(phase: .background, access: .granted))
-        #expect(!MirrorFeature.runsCamera(phase: .foreground, access: .notDetermined))
-        #expect(!MirrorFeature.runsCamera(phase: .foreground, access: .denied))
     }
 }

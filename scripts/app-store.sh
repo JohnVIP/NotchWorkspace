@@ -3,8 +3,7 @@
 #
 #   scripts/app-store.sh 0.3.0     # archive, sign for the App Store, and upload for TestFlight and review
 #
-# The App Store edition is the same app in the App Sandbox, without the now-playing helper, Sparkle,
-# the local updater, or the volume-key tap (docs/plan/implementation-plan.md#app-store-edition).
+# The App Store edition runs in the App Sandbox without Sparkle or the local updater.
 #
 # It needs a clean main, release.env (see release.env.example) with an App Store Connect team API
 # key allowed to use cloud-managed distribution certificates, and, once, an app record for the

@@ -18,30 +18,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         private let preferences = NotchPreferences()
         private let agents = AgentsFeature()
     #endif
-    private let media = MediaFeature()
     private let shelf = ShelfFeature()
-    private let clipboard = ClipboardFeature()
     private let calendar: CalendarFeature
     private let tasks: TasksFeature
     private let notes = NotesFeature()
     private let shortcuts = ShortcutsFeature()
     private let timer = TimerFeature()
-    private let network = NetworkFeature()
-    private let mirror = MirrorFeature()
     private lazy var features = FeatureHost(featureList)
     // System live activities, which belong to no tab.
     private let volume = VolumeMonitor()
     private let battery = BatteryMonitor()
     private let accessories = AccessoryMonitor()
-    private let volumeKeys = VolumeKeyTap()
     /// Opens and closes the notch from any app.
     private let notchKey = HotKey()
     /// Escape, only while a notch the shortcut opened is still open.
     private let escapeKey = HotKey()
     /// Starts a new note from any app, while Notes has it on.
     private let quickNoteKey = HotKey()
-    /// Opens the Clipboard tab from any app, ready to search.
-    private let clipboardKey = HotKey()
 
     override init() {
         let eventStore = EventStore()  // shared, and only created when Calendar or Tasks first needs it
@@ -58,30 +51,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         preferences: preferences,
         updater: updater,
         notchKey: notchKey,
-        clipboardKey: clipboardKey,
         previewAnimation: { [weak self] in self?.coordinator?.previewAnimation() },
         featureSettings: { [unowned self] in self.settingsView(for: $0) })
 
     private var featureList: [any NotchFeature] {
         #if APP_STORE
-            [media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror]
+            [shelf, calendar, tasks, notes, shortcuts, timer]
         #else
-            [media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror, agents]
+            [shelf, calendar, tasks, notes, shortcuts, timer, agents]
         #endif
     }
 
     private func tabView(for feature: FeatureID) -> AnyView {
         switch feature {
-        case .media: return AnyView(media.view)
         case .shelf: return AnyView(shelf.view)
-        case .clipboard: return AnyView(clipboard.view)
         case .calendar: return AnyView(calendar.view)
         case .tasks: return AnyView(tasks.view)
         case .notes: return AnyView(notes.view)
         case .shortcuts: return AnyView(shortcuts.view)
         case .timer: return AnyView(timer.view)
-        case .network: return AnyView(network.view)
-        case .mirror: return AnyView(mirror.view)
         case .agents:
             #if APP_STORE
                 return AnyView(EmptyView())
@@ -94,15 +82,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Each tab's own settings, as the sections of its Settings page.
     private func settingsView(for feature: FeatureID) -> AnyView? {
         switch feature {
-        case .media: return section(media.settingsView)
         case .shelf: return section(shelf.settingsView)
-        case .clipboard: return section(clipboard.settingsView)
         case .calendar: return section(calendar.settingsView)
         case .tasks: return section(tasks.settingsView)
         case .shortcuts: return section(shortcuts.settingsView)
         case .notes: return section(notes.settingsView)
-        case .network: return section(network.settingsView)
-        case .timer, .mirror: return nil
+        case .timer: return nil
         case .agents:
             #if APP_STORE
                 return nil
@@ -130,21 +115,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             escapeKey.shortcut = .escape
         }
         escapeKey.onPress = { [weak coordinator] in coordinator?.dismissAll() }
-        clipboardKey.onPress = { [weak self, weak coordinator] in
-            guard let self, coordinator?.toggle(.clipboard) == true else { return }
-            clipboard.wantsSearch = true
-        }
-        clipboard.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
-        clipboard.onPicked = { [weak coordinator] in coordinator?.dismissAll() }
-        media.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
-        media.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .media) }
         shelf.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         calendar.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         calendar.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .calendar) }
         timer.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         timer.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .timer) }
-        network.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
-        network.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .network) }
         shortcuts.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         tasks.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         notes.onSendToTasks = { [tasks] in tasks.add($0) }
@@ -156,13 +131,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             agents.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
             agents.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .agents) }
         #endif
-        volumeKeys.onKey = { [volume] key, fine in
-            switch key {
-            case .up: volume.step(up: true, fine: fine)
-            case .down: volume.step(up: false, fine: fine)
-            case .mute: volume.toggleMute()
-            }
-        }
         coordinator.start()
         self.coordinator = coordinator
         pendingMessages.forEach(showInNotch)
@@ -171,16 +139,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         observeContinuously { [weak self] in
             guard let self else { return }
             notchKey.shortcut = preferences.notchShortcut
-            clipboardKey.shortcut = preferences.isEnabled(.clipboard) ? preferences.clipboardShortcut : nil
-        }
-        // Accessibility access arrives while running; this is posted when it changes.
-        DistributedNotificationCenter.default().addObserver(
-            forName: Notification.Name("com.apple.accessibility.api"), object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(500))  // trust updates just after the notification
-                self?.updateSystemActivities()
-            }
         }
         statusItem = StatusItemController(updater: updater) { [weak self] in self?.settings.show($0) }
     }
@@ -207,13 +165,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        // Stops every feature, including the media helper process and the camera.
+        // Stops all feature work.
         features.update(presentations: [], enabled: [])
         timer.allowSleep()
         volume.stop()
         battery.stop()
         accessories.stop()
-        volumeKeys.stop()
     }
 
     /// Opens the notch on Notes with a new note, ready to type. The tab gets a moment to come on
@@ -230,21 +187,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Runs each system activity's listener, and the quick note shortcut, only while Settings has it
-    /// on. Replacing the volume display needs the volume activity and Accessibility access; without
-    /// access the keys keep working as usual until access is granted.
+    /// on.
     private func updateSystemActivities() {
         // Keep awake lives in the Timer tab: turning the tab off must not leave the Mac awake unseen.
         if !preferences.isEnabled(.timer) { timer.allowSleep() }
-        // What moves while the Network tab is off isn't counted when it comes back.
-        network.isEnabled = preferences.isEnabled(.network)
         preferences.showsVolume ? volume.start() : volume.stop()
         preferences.showsBattery ? battery.start() : battery.stop()
         preferences.showsAccessoryBattery ? accessories.start() : accessories.stop()
-        if preferences.showsVolume, preferences.replacesVolumeDisplay {
-            volumeKeys.start()
-        } else {
-            volumeKeys.stop()
-        }
         quickNoteKey.shortcut = notes.quickNoteShortcut && preferences.isEnabled(.notes) ? .newNote : nil
     }
 }

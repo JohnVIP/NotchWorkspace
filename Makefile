@@ -17,12 +17,10 @@ XCODEBUILD_ARGS ?=
 
 .PHONY: setup project build build-app-store run install update ship release app-store test lint format licenses secrets changelog check clean
 
-setup: ## Install developer tools (Brewfile) and fetch submodules
+setup: ## Install developer tools (Brewfile)
 	brew bundle
-	git submodule update --init --recursive
 
 project: ## Generate OpenNotch.xcodeproj from project.yml
-	git submodule update --init --recursive
 	xcodegen generate --quiet
 
 build: project ## Build the app; CONFIGURATION=Debug|Release
@@ -82,7 +80,6 @@ licenses: ## SPDX headers and third-party notices
 secrets: ## No keys, certificates, profiles, or credentials files in git
 	scripts/check-secrets.sh
 
-# The first MARKETING_VERSION in project.yml is the app's; the vendored helper's comes later.
 changelog: ## CHANGELOG.md has release notes for the version in project.yml
 	@scripts/release-notes.sh "$$(awk '/^ +MARKETING_VERSION:/ {print $$2; exit}' project.yml)" >/dev/null
 

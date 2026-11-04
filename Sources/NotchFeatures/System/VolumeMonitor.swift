@@ -15,9 +15,8 @@ public struct VolumeState: Equatable, Sendable {
     }
 }
 
-/// Raises a live activity when the output volume or mute changes, and sets the volume for the
-/// volume keys when the notch replaces macOS's own display. Core Audio calls back on changes, so
-/// nothing runs in between. Switching output devices moves the listener along without announcing.
+/// Raises a live activity when the output volume or mute changes. Core Audio calls back on changes,
+/// and switching output devices moves the listener along without announcing.
 @MainActor
 public final class VolumeMonitor {
     public var onActivity: ((Activity) -> Void)?
@@ -52,27 +51,6 @@ public final class VolumeMonitor {
             AudioObjectRemovePropertyListenerBlock(Self.system, &address, .main, deviceListener)
         }
         deviceListener = nil
-    }
-
-    /// Steps the volume like the volume keys: a sixteenth, or a quarter of that with Option-Shift.
-    /// Turning it up unmutes.
-    public func step(up: Bool, fine: Bool) {
-        guard let state = read() else { return }
-        if up, state.muted { setMuted(false) }
-        setLevel(Self.stepped(state.level, up: up, fine: fine))
-    }
-
-    public func toggleMute() {
-        guard let state = read() else { return }
-        setMuted(!state.muted)
-    }
-
-    /// The level after one volume key press, snapped to the keys' steps so repeated presses land
-    /// on the same notches macOS uses.
-    nonisolated static func stepped(_ level: Float, up: Bool, fine: Bool) -> Float {
-        let steps: Float = fine ? 64 : 16
-        let notch = (level * steps).rounded() + (up ? 1 : -1)
-        return min(max(notch / steps, 0), 1)
     }
 
     /// What the notch shows for a volume: a speaker with as many waves as the level, the percentage,
@@ -154,18 +132,5 @@ public final class VolumeMonitor {
         size = UInt32(MemoryLayout<UInt32>.size)
         if AudioObjectHasProperty(device, &mute) { AudioObjectGetPropertyData(device, &mute, 0, nil, &size, &muted) }
         return VolumeState(level: level, muted: muted != 0)
-    }
-
-    private func setLevel(_ level: Float) {
-        var address = Self.address(Self.volumeSelector)
-        var value = Float32(level)
-        AudioObjectSetPropertyData(device, &address, 0, nil, UInt32(MemoryLayout<Float32>.size), &value)
-    }
-
-    private func setMuted(_ muted: Bool) {
-        var address = Self.address(kAudioDevicePropertyMute)
-        guard AudioObjectHasProperty(device, &address) else { return }
-        var value: UInt32 = muted ? 1 : 0
-        AudioObjectSetPropertyData(device, &address, 0, nil, UInt32(MemoryLayout<UInt32>.size), &value)
     }
 }

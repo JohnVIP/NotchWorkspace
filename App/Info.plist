@@ -10,10 +10,6 @@
 	<string>rKEETTORw3k063xBn4P4UWHfyHwzEjFsHiXCYqPzPlQ=</string>
 	<key>OpenNotchCommit</key>
 	<string>$(OPENNOTCH_COMMIT)</string>
-	<key>NSAudioCaptureUsageDescription</key>
-	<string>ILoveNotch listens to what's playing so the media waveform moves with the music. Audio is processed on this Mac as it plays and is never recorded.</string>
-	<key>NSAppleEventsUsageDescription</key>
-	<string>ILoveNotch works Music and Spotify from the notch: shuffle and repeat, what plays next, and playing a track again. It only talks to the app that's playing.</string>
 	<!-- Show in Notch: ilovenotch://show?title=… from scripts and other apps. -->
 	<key>CFBundleURLTypes</key>
 	<array>

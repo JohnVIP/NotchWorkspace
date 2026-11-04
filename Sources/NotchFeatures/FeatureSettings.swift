@@ -3,25 +3,6 @@ import SwiftUI
 
 // Per-feature settings, shown under each feature's toggle in the Settings window.
 
-extension MediaFeature {
-    public var settingsView: some View {
-        @Bindable var media = self
-        return Group {
-            Toggle("Show track changes as a live activity", isOn: $media.announcesTracks)
-            Toggle(isOn: $media.showsInClosedNotch) {
-                Text("Show what's playing in the closed notch")
-                Text("The cover and title stay beside the camera while music plays, and for a minute after it pauses.")
-            }
-            Toggle(isOn: $media.waveformFollowsAudio) {
-                Text("Waveform follows the music")
-                Text(
-                    "Listens to your Mac's audio output while Media is open and playing. It's analyzed on this "
-                        + "Mac as it plays and never recorded. macOS asks for permission the first time.")
-            }
-        }
-    }
-}
-
 extension CalendarFeature {
     public var settingsView: some View {
         @Bindable var calendar = self
@@ -150,80 +131,6 @@ private struct AccessRow: View {
 extension ShortcutsFeature {
     public var settingsView: some View {
         ShortcutsSettings(shortcuts: self)
-    }
-}
-
-extension ClipboardFeature {
-    public var settingsView: some View { ClipboardSettings(clipboard: self) }
-}
-
-private struct ClipboardSettings: View {
-    let clipboard: ClipboardFeature
-
-    var body: some View {
-        Group {
-            // A closure, not a method reference: see the app's GeneralSettings.
-            Toggle(
-                isOn: Binding(
-                    get: { clipboard.isRecording },
-                    set: { $0 ? clipboard.startRecording() : clipboard.stopRecording() })
-            ) {
-                Text("Keep a history of what you copy")
-                Text(
-                    "Looks at the clipboard twice a second while it's on. Skips passwords, anything marked private, "
-                        + "and copies from password managers. Kept on this Mac only.")
-            }
-            if clipboard.isRecording, clipboard.access != .allowed {
-                LabeledContent("Paste from other apps") {
-                    Button("Open Privacy Settings") { NSWorkspace.shared.open(.privacySettings("Privacy_Pasteboard")) }
-                }
-            }
-            LabeledContent(clipboard.items.count == 1 ? "1 item" : "\(clipboard.items.count) items") {
-                Button("Clear History", role: .destructive, action: clipboard.clear)
-                    .disabled(clipboard.items.allSatisfy(\.favorite))
-            }
-            .help("Favorites stay.")
-        }
-        .onAppear(perform: clipboard.refreshAccess)
-    }
-}
-
-extension NetworkFeature {
-    public var settingsView: some View { NetworkSettings(network: self) }
-}
-
-private struct NetworkSettings: View {
-    @Bindable var network: NetworkFeature
-    @State private var confirmsClear = false
-
-    var body: some View {
-        Group {
-            Picker(selection: $network.closedNotch) {
-                ForEach(NetworkFeature.ClosedNotch.allCases) { Text($0.title).tag($0) }
-            } label: {
-                Text("Show speed in the menu bar")
-                Text(
-                    "Beside the closed notch. While Downloading shows it once a download or upload runs at 1 MB/s or "
-                        + "more for a few seconds, says how much it moved when it's done, and hides again; it checks "
-                        + "every 3 seconds. Always reads the speed every second. Never shows nothing there, and reads "
-                        + "the speed only while the tab is open.")
-            }
-            LabeledContent {
-                Button("Clear History\u{2026}", role: .destructive) { confirmsClear = true }
-                    .disabled(network.lifetime.total == 0)
-            } label: {
-                Text("History")
-                Text(
-                    "\(NetworkFeature.bytes(network.lifetime.down)) down and \(NetworkFeature.bytes(network.lifetime.up)) "
-                        + "up, kept by the hour on this Mac. NetSpeed's history comes along the first time.")
-            }
-            .confirmationDialog("Clear the network history?", isPresented: $confirmsClear) {
-                Button("Clear History", role: .destructive, action: network.clearHistory)
-            } message: {
-                Text("Every hour recorded so far is deleted. This can't be undone.")
-            }
-        }
-        .onAppear(perform: network.refreshTotals)
     }
 }
 
