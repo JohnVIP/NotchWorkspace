@@ -3,6 +3,29 @@
     <channel>
         <title>ILoveNotch</title>
         <item>
+            <title>1.5.0</title>
+            <pubDate>Wed, 04 Nov 2026 12:01:32 +0700</pubDate>
+            <sparkle:version>163</sparkle:version>
+            <sparkle:shortVersionString>1.5.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[
+ILoveNotch 1.5 comes from your feedback: edit the tab row right in All Apps, put your tasks in your own order, and paste with ⌘V.
+
+### Added
+
+- **Put your tasks in your own order.** Drag a task onto another in the same section to move it there; that section keeps your order, and new tasks join its end, as in Reminders. Sections you never rearrange stay soonest due first.
+
+### Changed
+
+- **Edit the tab row right in All Apps.** Edit no longer opens another screen: the tabs wiggle where they are, each with a minus to keep it in the drawer, the apps off the row get a plus, and Edit turns into Done.
+
+### Fixed
+
+- **⌘V pastes in the notch.** Paste, copy, cut, select all, undo, and redo now work in every text field, in the notch and in Settings.
+]]></description>
+            <enclosure url="https://github.com/niyamvora/ILoveNotch/releases/download/v1.5.0/ILoveNotch-1.5.0.dmg" length="7177477" type="application/octet-stream" sparkle:edSignature="2kptX2fLgXYxnefZuvjlQdK9AWv+Z+Lm2C+dsUch1RoAEK1M7M05Hm2aZZI5Ms8zwGRiWjSevUebJQr6TXD3Cw=="/>
+        </item>
+        <item>
             <title>1.4.0</title>
             <pubDate>Sun, 11 Oct 2026 00:18:39 +0900</pubDate>
             <sparkle:version>157</sparkle:version>
@@ -47,36 +70,6 @@ ILoveNotch 1.3 puts the tabs on Liquid Glass with new icons, lets you select and
 - ILoveNotch no longer quits as it opens when a reminder with a time is due within a day.
 ]]></description>
             <enclosure url="https://github.com/niyamvora/ILoveNotch/releases/download/v1.3.0/ILoveNotch-1.3.0.dmg" length="6979279" type="application/octet-stream" sparkle:edSignature="15KxKKY6FWNz6cIbJwcQrsHvgZZ3MrB0RZyFovD33Z/hrhnO+iLf8zBcTA/yKA2bREJrpATtLjuzhXeI/vXRDw=="/>
-        </item>
-        <item>
-            <title>1.2.0</title>
-            <pubDate>Mon, 28 Sep 2026 11:03:13 +0530</pubDate>
-            <sparkle:version>141</sparkle:version>
-            <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.6</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[
-ILoveNotch 1.2 turns each app's volume up or down, shows your network speed, puts the tabs in your order, and lays Settings out like System Settings.
-
-### Added
-
-- **Sound tab.** Every app playing sound gets a fader of its own, with its icon, to turn it down or mute it, beside your output's and microphone's volume. Switch between your speakers, headphones, AirPods, AirPlay, and displays with a click. Hovering the volume in the closed notch opens the tab.
-- **Network tab.** Your download and upload speed as it happens, over a graph of the last minute, and how much you've moved by the hour, day, or month. A big download shows its speed beside the notch, then how much it moved. If you used NetSpeed, its history comes along.
-- **Tabs in your order.** Drag the tabs into your own order right in the notch, and keep the ones you use less in the app drawer.
-- **App drawer.** The grid button after the tabs opens every tab as a grid, like Launchpad, the ones you've turned off included.
-- **About and What's New** in the menu bar item.
-
-### Changed
-
-- **Settings, redesigned.** Laid out like System Settings: a sidebar with a page for each part of the app and each tab, marked with colored icons, and each tab's switch at the top of its page. Pick the theme from previews of the notch.
-- The menu bar item's menu has symbols, like the system's own menus.
-- Reset to Defaults asks before it resets.
-- AI Usage reads large session logs with a fraction of the memory: an 80 MB log peaks at 6 MB, not 120 MB.
-
-### Fixed
-
-- On a display without a notch, the notch no longer sits on top of a full-screen app.
-]]></description>
-            <enclosure url="https://github.com/niyamvora/ILoveNotch/releases/download/v1.2.0/ILoveNotch-1.2.0.dmg" length="6904158" type="application/octet-stream" sparkle:edSignature="V4v89/fcRkkNO5qsPnMiA8MpoaX54lnXMp0ajenr1yNty+rjmkrjS7RtorrnrerlLgZasJQPyinm3Yow/PDbBQ=="/>
         </item>
     </channel>
 </rss>
