@@ -53,8 +53,11 @@ struct AgentsView: View {
     private func row(_ session: AgentSession) -> some View {
         let waiting = session.state == .waiting
         return HStack(spacing: 10) {
-            ProviderLogo(providerID: session.tool.rawValue, name: session.tool.name, size: 18)
-                .foregroundStyle(ProviderStyle.of(session.tool.rawValue).gradient)
+            Image(systemName: session.tool == .claude ? "terminal" : "chevron.left.forwardslash.chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(session.tool == .claude ? Color.orange : Color.teal)
+                .frame(width: 18)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
                 Text(session.project).font(.callout.weight(.medium)).lineLimit(1)
                 status(session)
@@ -118,10 +121,7 @@ private struct AgentsSettings: View {
                         get: { agents.connected.contains(tool) },
                         set: { $0 ? agents.connect(tool) : agents.disconnect(tool) })
                 ) {
-                    HStack(spacing: 6) {
-                        ProviderLogo(providerID: tool.rawValue, name: tool.name, size: 14)
-                        Text(tool.name)
-                    }
+                    Text(tool.name)
                     Text(explanation(tool))
                 }
                 .disabled(!agents.available.contains(tool))

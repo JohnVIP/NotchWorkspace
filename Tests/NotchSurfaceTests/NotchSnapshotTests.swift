@@ -96,7 +96,7 @@ struct NotchSnapshotTests {
     /// smallest, and with every tab in the row.
     @Test func theTabEditorRenders() throws {
         let preferences = Self.preferences()
-        preferences.setEnabled(.usage, false)
+        preferences.setEnabled(.clipboard, false)
         preferences.setEnabled(.agents, false)
         preferences.place(.timer, at: 1)
         let events: [NotchEvent] = [.show, .clicked]
@@ -114,13 +114,13 @@ struct NotchSnapshotTests {
     @Test func theAppDrawerRenders() throws {
         let preferences = Self.preferences()
         preferences.setEnabled(.agents, false)
-        preferences.moveToDrawer(.usage)
+        preferences.moveToDrawer(.notes)
         let events: [NotchEvent] = [.show, .clicked]
         try draw("drawer", metrics: notched, events: events, preferences: preferences, drawer: true)
         try draw("drawer-pill", metrics: notchless, events: events, preferences: preferences, drawer: true)
         preferences.resizeExpanded(to: NotchPreferences.minimumExpandedSize)
         try draw("drawer-smallest", metrics: notched, events: events, preferences: preferences, drawer: true)
-        try draw("drawer-app-open", metrics: notched, events: events + [.selectTab(.usage)], preferences: preferences)
+        try draw("drawer-app-open", metrics: notched, events: events + [.selectTab(.notes)], preferences: preferences)
     }
 
     private static func preferences() -> NotchPreferences {

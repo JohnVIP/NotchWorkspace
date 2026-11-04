@@ -77,11 +77,11 @@ struct NotchPreferencesTests {
     }
 
     @Test func aFeatureAddedByAnUpdateJoinsTheEndOfACustomOrder() {
-        defaults.set(["timer", "media", "a-feature-from-the-future", "timer"], forKey: "tabOrder")
+        defaults.set(["timer", "usage", "media", "a-feature-from-the-future", "timer"], forKey: "tabOrder")
         let order = NotchPreferences(defaults: defaults).tabOrder
         #expect(order.prefix(2) == [.timer, .media])
         #expect(Array(order.dropFirst(2)) == FeatureID.allCases.filter { $0 != .timer && $0 != .media })
-        #expect(!NotchPreferences(defaults: defaults, unavailable: [.usage]).tabOrder.contains(.usage))
+        #expect(!NotchPreferences(defaults: defaults, unavailable: [.agents]).tabOrder.contains(.agents))
     }
 
     @Test func resetRestoresTheDefaults() {

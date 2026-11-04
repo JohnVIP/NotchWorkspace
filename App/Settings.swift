@@ -153,7 +153,6 @@ extension SettingsSelection.Page {
             case .timer: (feature.symbol, .orange)
             case .network: ("arrow.up.arrow.down", .blue)
             case .mirror: (feature.symbol, .green)
-            case .usage: (feature.symbol, .purple)
             case .agents: (feature.symbol, .gray)
             }
         }
@@ -180,7 +179,6 @@ extension SettingsSelection.Page {
             case .timer: "Timers, a stopwatch with laps, and Keep Awake."
             case .network: "Your download and upload speed, and how much you've used."
             case .mirror: "Your camera, on only while its tab is open."
-            case .usage: "How much of each AI coding plan you've used."
             case .agents: "When Claude Code or Codex needs you or finishes, in the closed notch."
             }
         }

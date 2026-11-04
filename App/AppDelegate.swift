@@ -6,21 +6,19 @@ import NotchSurface
 import SwiftUI
 
 #if !APP_STORE
+    import NotchAgents
     import NotchMixer
     import NotchTransfer
-    import NotchUsage
 #endif
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     #if APP_STORE
-        // The App Sandbox can't read other tools' sign-ins or add hooks to their settings, so the App
-        // Store edition has no AI Usage or Agents. Sharing with Android, and the Sound tab's per-app
-        // volume (process taps, and a private call to tell whose helper plays), ship in the GitHub build.
-        private let preferences = NotchPreferences(unavailable: [.usage, .agents, .sound])
+        // The App Sandbox can't add hooks to other tools' settings, so the App Store edition has no
+        // Agents. Android sharing and per-app volume also ship in the GitHub build only.
+        private let preferences = NotchPreferences(unavailable: [.agents, .sound])
     #else
         private let preferences = NotchPreferences()
-        private let usage = UsageFeature()
         private let agents = AgentsFeature()
         /// Quick Share with Android phones, part of the shelf.
         private let transfer = TransferFeature()
@@ -75,7 +73,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #if APP_STORE
             [media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror]
         #else
-            [media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror, usage, agents]
+            [media, shelf, clipboard, calendar, tasks, notes, shortcuts, timer, network, mirror, agents]
         #endif
     }
 
@@ -102,12 +100,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .timer: return AnyView(timer.view)
         case .network: return AnyView(network.view)
         case .mirror: return AnyView(mirror.view)
-        case .usage:
-            #if APP_STORE
-                return AnyView(EmptyView())
-            #else
-                return AnyView(usage.view)
-            #endif
         case .agents:
             #if APP_STORE
                 return AnyView(EmptyView())
@@ -144,12 +136,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .notes: return section(notes.settingsView)
         case .network: return section(network.settingsView)
         case .timer, .mirror: return nil
-        case .usage:
-            #if APP_STORE
-                return nil
-            #else
-                return AnyView(usage.settingsView)  // sections of its own
-            #endif
         case .agents:
             #if APP_STORE
                 return nil
@@ -203,8 +189,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         battery.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         accessories.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
         #if !APP_STORE
-            usage.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
-            usage.openSettings = { [weak self] in self?.settings.show(.feature(.usage)) }
             agents.onActivity = { [weak coordinator] in coordinator?.broadcast(.activity($0)) }
             agents.onOngoing = { [weak coordinator] in coordinator?.setOngoing($0, for: .agents) }
             shelf.sendToAndroid = { [transfer] in transfer.send($0) }

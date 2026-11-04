@@ -55,16 +55,13 @@ extension FeatureID {
         case .timer: "alarm"
         case .network: "ufo"  // beaming your data up and down
         case .mirror: "device-computer-camera"
-        case .usage: "gauge"
         case .agents: "terminal-2"
         }
     }
 }
 
 extension Bundle {
-    /// NotchSurface's resources (the icons). The app's Resources come first: in a packaged app,
-    /// SwiftPM's `Bundle.module` can fail to find its bundle and stop the app, as NotchUsage's
-    /// `openUsageResources` explains.
+    /// NotchSurface's resources. Look in the packaged app before the SwiftPM test locations.
     static let surfaceResources: Bundle = {
         let name = "OpenNotchKit_NotchSurface.bundle"
         for case let base? in [Bundle.main.resourceURL, Bundle.main.bundleURL] {

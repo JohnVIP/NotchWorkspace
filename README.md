@@ -20,18 +20,10 @@ https://github.com/user-attachments/assets/9d0c486c-5169-4297-b8b9-8fedbb9eadda
 
 An **original, open-source** macOS menu-notch utility — turns the notch on Apple
 Silicon MacBooks into an interactive tray for media and sound, files, your
-calendar, tasks, notes, shortcuts, timers, your network speed, your camera, and
-how much of your AI plans you've used. Built native (SwiftUI + AppKit) with a **hard focus on low RAM and
-near-zero idle CPU** ([measured](#efficiency)).
+calendar, tasks, notes, shortcuts, timers, network speed, camera, and coding agent status.
+Built with SwiftUI and AppKit.
 
 <p align="center">
-  <img src="docs/media/ai-usage.gif" width="760" alt="The open notch on the AI Usage tab: Claude and Codex as cards with rings and bars, then Claude's limits, spend, and daily usage chart">
-</p>
-
-<p align="center">
-  <img src="docs/media/screenshots/ai-usage.png" width="49%" alt="Keep an eye on your AI limits: Claude, Codex, and Copilot usage as cards in the notch">
-  <img src="docs/media/screenshots/claude.png" width="49%" alt="Know exactly where you stand: Claude's session and weekly limits, spend, and a 30-day chart">
-  <img src="docs/media/screenshots/codex.png" width="49%" alt="Every model, one glance: Codex's limits, resets, spend, and credits">
   <img src="docs/media/screenshots/shelf.png" width="49%" alt="Park it in the notch: files dropped on the notch shelf, ready to drag out or AirDrop">
   <img src="docs/media/screenshots/timer.png" width="49%" alt="Focus in one tap: preset timers from 1 minute to 1 hour, plus a stopwatch">
   <img src="docs/media/screenshots/calendar.png" width="49%" alt="Your day, one hover away: today's events in the notch">
@@ -120,8 +112,6 @@ public and buildable whatever happens to the project.
   [More below](#network).
 - **Mirror.** Your camera, off until you turn it on, and on only while its tab
   is open.
-- **AI Usage.** How much of each AI coding plan you've used, as a card per tool,
-  across 11 providers. [More below](#ai-usage).
 - **Agents.** When Claude Code or Codex needs your approval, the closed notch
   says so until you answer, and it tells you when one finishes while you're in
   another app; one click takes you back to its terminal.
@@ -150,7 +140,7 @@ code anyone can inspect, build, and improve.
 
 ## Efficiency
 
-Measured over a real 20-hour workday on an Apple M5 Pro MacBook (24 GB, macOS
+The upstream build was measured over a real 20-hour workday on an Apple M5 Pro MacBook (24 GB, macOS
 26.6.2), 24–25 September 2026.
 
 <p align="center">
@@ -199,11 +189,11 @@ hover, clicks, drags, sleep/lock, display changes
 | `NotchCore` | State machine, `NotchEngine`, `FeatureHost` lifecycle, preferences, typed logging and signposts. No AppKit. |
 | `NotchSurface` | Fixed click-through `NSPanel` per display, animatable `NotchShape`, `PanelCoordinator` (displays, sleep, lock), notch geometry from **public** APIs (`safeAreaInsets`, `auxiliaryTop*Area`), and the tab row's editor (`TabEditor`) and app drawer (`AppDrawer`) |
 | `NotchFeatures` | Feature modules (Media, Shelf, Clipboard, Calendar, Tasks, Notes, Shortcuts, Timer, Network, Mirror), each a `NotchFeature` with its views and settings, and the event-driven system monitors and hooks (volume, battery, accessories, volume keys, keyboard shortcuts, Show in Notch) |
-| `NotchUsage` | The GitHub build's developer tabs: AI Usage (provider tiles, rings, pace, spend, and trends, over providers adapted from [OpenUsage](https://github.com/robinebers/openusage) (MIT) in `NotchUsage/OpenUsage`) and Agents (Claude Code and Codex hooks, in `NotchUsage/Agents`) |
+| `NotchAgents` | The GitHub build’s Claude Code and Codex status and hooks |
 | `NotchTransfer` | The GitHub build's Android sharing: Quick Share on Apple's own frameworks (Bonjour, CryptoKit, Network.framework) in `NotchTransfer/QuickShare`, with the shelf's request card, the send window, and settings |
 | `NotchMixer` | The GitHub build's Sound tab: output and input devices and their volume, and per-app volume on Core Audio process taps (macOS 14.2+), with a private aggregate device for each app turned down while it plays |
 | `ThirdParty/` | [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) (BSD-3-Clause) as a git submodule |
-| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features, the mixer, network counters and history), offscreen snapshot tests, XCTest performance tests, and OpenUsage's provider tests on its fixtures (`OpenUsageTests`) |
+| `Tests/` | Unit tests (reducer transitions and fuzzing, engine, feature host, preferences, geometry, features, the mixer, network counters and history), offscreen snapshot tests, XCTest performance tests |
 
 The full design is in the [implementation plan](docs/plan/implementation-plan.md)
 and the [architecture diagram](docs/plan/architecture.html).
@@ -324,30 +314,6 @@ core, and the open tab about 0.6%. The numbers change without rolling: rolled,
 they kept the open tab busy at 12–51% of a core. It adds about half a megabyte
 of memory.
 
-## AI usage
-
-The AI Usage tab shows how much of your AI coding plans you've used, as a small
-dashboard card per tool:
-
-- Claude, Codex, Cursor, Copilot, Antigravity, Devin, Grok, Ollama, OpenCode,
-  OpenRouter, and Z.ai are supported.
-- Each card shows its main limit as a ring, the others as bars, when they reset,
-  and whether they'll last until then. Click a card for spend, the daily trend,
-  and every limit.
-- Alerts show in the notch when a limit passes 80% or 95%, or resets.
-
-Each provider is off until you add it from the tray under the cards, where the
-tools signed in on this Mac are in color, or in **Settings › AI Usage**.
-OpenRouter and Z.ai have no sign-in to reuse, so they take an API key, pasted
-in **Settings › AI Usage** and kept in your keychain.
-
-Each provider reads the sign-in its own tool keeps on this Mac and sends it only
-to its own service. What it reads and sends is in
-[PRIVACY.md](PRIVACY.md#ai-usage). The provider code is adapted from
-[OpenUsage](https://github.com/robinebers/openusage) (MIT), and ILoveNotch isn't
-affiliated with it. The tab is in the GitHub build only: reading other tools'
-sign-ins doesn't fit the App Store's sandbox.
-
 ## Agent status
 
 The Agents tab shows what Claude Code and Codex are doing in your terminals:
@@ -364,8 +330,7 @@ disconnecting takes out exactly those. The hooks run in the background, so an
 agent never waits on them, and they write one small file per session: its
 state, project folder, terminal app, and what it's waiting for, never your
 prompts or code. Nothing leaves your Mac; see [PRIVACY.md](PRIVACY.md#agent-status).
-Like AI Usage, it's in the GitHub build only, since hooks don't fit the App
-Store's sandbox.
+Agents is available in the GitHub build, where it can write to the tools’ hook settings.
 
 ## Show in Notch
 

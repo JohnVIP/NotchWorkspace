@@ -67,7 +67,7 @@ targets:
       - package: OpenNotchKit
         product: NotchFeatures
       - package: OpenNotchKit
-        product: NotchUsage
+        product: NotchAgents
       - package: OpenNotchKit
         product: NotchTransfer
       - package: OpenNotchKit

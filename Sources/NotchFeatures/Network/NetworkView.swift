@@ -35,7 +35,7 @@ struct NetworkView: View {
     }
 }
 
-/// Cards like the AI Usage tiles: a faint tint from the top corner and a hairline edge.
+/// Cards with a faint tint from the top corner and a hairline edge.
 private struct Card: ViewModifier {
     let tint: Color
 

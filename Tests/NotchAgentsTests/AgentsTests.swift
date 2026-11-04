@@ -4,7 +4,7 @@ import NotchCore
 import SwiftUI
 import Testing
 
-@testable import NotchUsage
+@testable import NotchAgents
 
 /// A throwaway home and support folder, with Claude Code's and Codex's settings folders in it.
 private struct Sandbox {
@@ -254,4 +254,16 @@ struct AgentsFeatureTests {
         #expect(AgentSession(id: "cursor-1", contents: "done\n\n\n\n1\n", updated: .now) == nil, "not ours")
         #expect(AgentSession(id: "claude-1", contents: "sleeping\n\n\n\n1\n", updated: .now) == nil)
     }
+}
+
+/// Waits until `condition` holds, checking every 10 ms, for at most 30 seconds: long enough for a
+/// busy CI runner, where tests share the main actor.
+@MainActor
+private func eventually(_ condition: @MainActor () -> Bool) async -> Bool {
+    let deadline = ContinuousClock.now + .seconds(30)
+    while !condition() {
+        guard ContinuousClock.now < deadline else { return false }
+        try? await Task.sleep(for: .milliseconds(10))
+    }
+    return true
 }

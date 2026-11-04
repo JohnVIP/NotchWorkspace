@@ -3,10 +3,8 @@
 ILoveNotch is local-first.
 
 - No accounts, analytics, telemetry, or device fingerprinting.
-- The network is used for three things only: the update check against GitHub
-  Releases, the AI Usage providers you turn on (below), and sharing with
-  Android phones when you use it, which stays on your local network (below).
-  With no provider on, the AI Usage tab never touches the network.
+- The app uses the network to check for updates against GitHub Releases and to
+  share with Android phones over your local network when you use Quick Share.
 - Everything ILoveNotch creates (settings, notes, shelf items) stays on your Mac,
   unless you choose a notes folder that syncs, such as one in iCloud Drive.
 - System permissions (Calendar, Reminders, Camera, and so on) are requested only
@@ -51,47 +49,6 @@ ILoveNotch is local-first.
   at 100% aren't touched. **Reset All** in Settings › Sound hands
   every app back its own volume. Switching devices and setting the output's or
   microphone's volume there hear nothing at all.
-
-## AI Usage
-
-The AI Usage tab shows how much of your AI coding plans you've used. Its
-providers come from [OpenUsage](https://github.com/robinebers/openusage). Every
-provider is off until you turn it on, and nothing reaches the network before
-that.
-
-To find which tools are signed in on this Mac, when you open the tab or its
-settings, and to read a provider's sign-in when it refreshes, ILoveNotch:
-
-- Reads the sign-in each tool keeps on this Mac: its files (like
-  `~/.codex/auth.json` or Cursor's settings database) and its keychain items,
-  through `/usr/bin/security`. The sign-ins stay in memory. macOS may ask you
-  to allow a keychain read.
-- May run your login shell once (`$SHELL -ilc env`) to see settings and API
-  keys you export there, such as `CLAUDE_CONFIG_DIR` or `OPENROUTER_API_KEY`.
-  Only non-secret settings (config folders, sign-in endpoints) are remembered.
-- Keeps an API key you paste in **Settings › AI Usage** (for OpenRouter or
-  Z.ai) in your login keychain, as "ILoveNotch AI Usage", never in a file.
-  **Remove** there deletes it.
-
-For each provider you turn on, ILoveNotch:
-
-- Sends your sign-in only to that provider's own service, to ask for your
-  usage. Antigravity is asked through its language server on this Mac, found
-  with `ps` and `lsof`.
-- When a sign-in has expired, renews it with that provider and saves the new
-  token back where its tool keeps it, the same way the tool would. For
-  Antigravity, it asks you to open Antigravity instead.
-- Reads the tool's local session logs (Claude Code, Codex, and others) to
-  estimate what you've spent. Prices come from public price lists: LiteLLM
-  (raw.githubusercontent.com), models.dev, and OpenUsage's price supplement
-  (robinebers.github.io). ILoveNotch downloads them about once an hour while a
-  provider refreshes. These requests carry nothing about you or your usage.
-
-Refreshes happen when you open the tab, every five minutes while it stays open,
-and in the background only if you choose an interval in Settings (off by
-default). Results are cached in `~/Library/Application Support/OpenNotch/` so
-the tab paints at once. Turning a provider off deletes its cached results. The
-Mac App Store edition doesn't include the AI Usage tab.
 
 ## Agent status
 
