@@ -11,6 +11,10 @@ as they land, written for the people who use the app
 
 ## [Unreleased]
 
+### Fixed
+
+- **⌘V pastes in the notch.** Paste, copy, cut, select all, undo, and redo now work in every text field, in the notch and in Settings.
+
 ## [1.4.0] - 2026-10-09
 
 ILoveNotch 1.4 makes the Media tab a fuller player: shuffle and repeat, Music's up next, the cover in the closed notch, and controls that work in the App Store edition too.
